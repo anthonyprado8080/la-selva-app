@@ -1,0 +1,62 @@
+{
+    "mesas": {
+        "1": "CLAVE1",
+        "2": "CLAVE2"
+    },
+    "menu": [
+        {
+            "id": 1,
+            "cat": "Comida",
+            "nombre": "Tacacho con Cecina",
+            "precio": 25,
+            "img": "https://images.unsplash.com/photo-1604908176997-125f25cc6f3d?w=500"
+        },
+        {
+            "id": 2,
+            "cat": "Bebida",
+            "nombre": "Cocona Helada",
+            "precio": 8,
+            "img": "https://images.unsplash.com/photo-1513558161293-cdaf765ed2fd?w=500"
+        }
+    ],
+    "pedidos_activos": [
+        {
+            "id": 1,
+            "mesa": "1",
+            "hora": "14:40",
+            "platos": [
+                {
+                    "cantidad": 4,
+                    "nombre": "Tacacho con Cecina",
+                    "subtotal": 100
+                },
+                {
+                    "cantidad": 4,
+                    "nombre": "Cocona Helada",
+                    "subtotal": 32
+                }
+            ],
+            "total": 132
+        }
+    ],
+    "historial_ventas": [
+        {
+            "id": 1,
+            "mesa": "1",
+            "hora": "14:40",
+            "platos": [
+                {
+                    "cantidad": 4,
+                    "nombre": "Tacacho con Cecina",
+                    "subtotal": 100
+                },
+                {
+                    "cantidad": 4,
+                    "nombre": "Cocona Helada",
+                    "subtotal": 32
+                }
+            ],
+            "total": 132
+        }
+    ]
+}
