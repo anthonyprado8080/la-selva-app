@@ -3,20 +3,44 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <title>La Selva - Inicio</title>
+    <title>La Selva del Prado | Restaurante</title>
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600&family=Playfair+Display:wght@700&display=swap" rel="stylesheet">
     <style>
-        body { background: linear-gradient(rgba(0,0,0,0.6), rgba(0,0,0,0.6)), url('https://images.unsplash.com/photo-1518709268805-4e9042af9f23?w=1200'); background-size: cover; height: 100vh; display: flex; align-items: center; justify-content: center; color: white; }
-        .glass { background: rgba(255, 255, 255, 0.1); backdrop-filter: blur(10px); padding: 50px; border-radius: 30px; border: 1px solid rgba(255,255,255,0.2); }
+        :root { --primary-color: #2E5C31; --secondary-color: #D4A373; --text-dark: #333333; }
+        body { font-family: 'Montserrat', sans-serif; background-image: url('https://images.unsplash.com/photo-1518531933037-91b2f5f229cc?q=80&w=1920&auto=format&fit=crop'); background-size: cover; background-position: center; color: white; height: 100vh; margin: 0; display: flex; justify-content: center; align-items: center; }
+        .overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(18, 28, 19, 0.75); z-index: 1; }
+        .container { position: relative; z-index: 2; text-align: center; width: 90%; max-width: 800px; }
+        .logo { font-family: 'Playfair Display', serif; font-size: 3.5rem; margin-bottom: 0.5rem; }
+        .logo span { color: var(--secondary-color); }
+        .actions { display: flex; gap: 2rem; justify-content: center; flex-wrap: wrap; margin-top: 3rem; }
+        .card-btn { text-decoration: none; color: var(--text-dark); background: white; padding: 2rem; border-radius: 12px; width: 280px; transition: transform 0.3s, box-shadow 0.3s; }
+        .card-btn:hover { transform: translateY(-5px); box-shadow: 0 15px 30px rgba(0,0,0,0.4); }
+        .primary-btn { border-bottom: 5px solid var(--primary-color); }
+        .secondary-btn { border-bottom: 5px solid var(--secondary-color); }
+        .icon { font-size: 3rem; margin-bottom: 1rem; }
+        .card-btn h2 { font-size: 1.5rem; margin-bottom: 0.5rem; color: var(--text-dark); }
+        .card-btn p { font-size: 0.95rem; color: #666; }
     </style>
 </head>
 <body>
-    <div class="glass text-center shadow-lg">
-        <h1 class="display-3 fw-bold mb-4">🌿 LA SELVA</h1>
-        <div class="d-grid gap-3">
-            <a href="/login-mesa" class="btn btn-success btn-lg py-3 fw-bold rounded-pill shadow">🍽️ IR A MI MESA</a>
-            <a href="/admin-login" class="btn btn-outline-light rounded-pill">🔒 ADMINISTRACIÓN</a>
-        </div>
+    <div class="overlay"></div>
+    <div class="container">
+        <header class="header">
+            <h1 class="logo">La Selva <span>del Prado</span></h1>
+            <p class="tagline">El sabor de la selva directamente en tu mesa</p>
+        </header>
+        <main class="actions">
+            <a href="/login-mesa" class="card-btn primary-btn">
+                <div class="icon">🍽️</div>
+                <h2>Ir a mi mesa</h2>
+                <p>Ingresa para ver nuestra carta y realizar tu pedido.</p>
+            </a>
+            <a href="/admin-login" class="card-btn secondary-btn">
+                <div class="icon">⚙️</div>
+                <h2>Administración</h2>
+                <p>Acceso exclusivo para el control del restaurante.</p>
+            </a>
+        </main>
     </div>
 </body>
 </html>

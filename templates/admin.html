@@ -3,83 +3,136 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <title>Panel de Control - La Selva</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
     <style>
-        body { background-color: #f4f7f6; font-family: 'Segoe UI', sans-serif; }
-        .card-panel { border: none; border-radius: 15px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); }
-        .header-bg { background: #1e3d1a; color: white; border-radius: 15px 15px 0 0; }
-        @keyframes parpadeo {
-            0% { opacity: 1; transform: scale(1); }
-            50% { opacity: 0.8; transform: scale(1.02); }
-            100% { opacity: 1; transform: scale(1); }
-        }
-        .alerta-pedido { animation: parpadeo 1.5s infinite; background-color: #dc3545 !important; color: white !important; }
-        .ticket-item { background-color: #fdfdfd; font-size: 0.95rem; }
-        .ticket-total { background-color: #fff3cd; color: #856404; font-size: 1.1rem; }
+        :root { --selva-dark: #1e3d1a; --selva-accent: #d4a373; }
+        body { background-color: #f4f6f4; font-family: system-ui, sans-serif; }
+        .admin-navbar { background: var(--selva-dark); }
+        .card-mesa { border-radius: 16px; border: none; box-shadow: 0 4px 12px rgba(0,0,0,0.05); overflow: hidden; margin-bottom: 1.5rem; }
+        .mesa-header { background: var(--selva-dark); color: white; padding: 12px 15px; font-weight: bold; display: flex; justify-content: space-between; }
+        .badge-pendiente { background-color: #fff3cd; color: #856404; border: 1px solid #ffeeba; }
+        .plato-item { transition: all 0.2s ease; border-radius: 8px; }
+        .plato-item:hover { background-color: #f8f9fa; }
+        .plato-oculto { opacity: 0.5; background-color: #f1f1f1; }
+        .caja-resumen { background: linear-gradient(135deg, var(--selva-dark), #2b5726); color: white; border-radius: 16px; padding: 1.5rem; margin-bottom: 2rem; box-shadow: 0 5px 15px rgba(0,0,0,0.1); }
     </style>
 </head>
-<body class="p-3 p-md-5">
-    <div class="d-flex justify-content-between align-items-center mb-4">
-        <h2 class="fw-bold" style="color: #1e3d1a;">🌳 Centro de Mando</h2>
-        <a href="/admin/logout" class="btn btn-danger fw-bold rounded-pill px-4 shadow">Cerrar Sesión</a>
-    </div>
+<body>
+    <nav class="navbar admin-navbar navbar-dark sticky-top px-4 py-3 shadow-sm">
+        <a class="navbar-brand fw-bold" href="#"><i class="bi bi-cpu-fill"></i> La Selva del Prado | Panel Central</a>
+        <a href="/admin/logout" class="btn btn-outline-light rounded-pill fw-bold px-4"><i class="bi bi-box-arrow-right"></i> Salir del Panel</a>
+    </nav>
 
-    <div class="row g-4">
-        <div class="col-lg-6">
-            <div class="card card-panel bg-success text-white text-center mb-4 shadow">
-                <div class="card-body py-4">
-                    <h6 class="text-uppercase mb-1">Total Ventas Hoy</h6>
-                    <h1 class="display-3 fw-bold mb-3">S/ {{ total_dia }}</h1>
-                    <a href="/admin/reset_ventas" class="btn btn-outline-light btn-sm rounded-pill fw-bold px-4" 
-                       onclick="return confirm('⚠️ ¿Estás seguro de reiniciar la caja a S/ 0? Solo hazlo al cerrar el negocio.');">
-                        🔄 Reiniciar Caja a S/ 0
-                    </a>
+    <div class="container-fluid py-4 px-4">
+        <div class="caja-resumen d-flex justify-content-between align-items-center">
+            <div>
+                <h6 class="mb-1 text-uppercase fw-bold" style="letter-spacing: 1px; color: var(--selva-accent);">Caja Actual</h6>
+                <h2 class="mb-0 fw-bold">S/ {{ "%.2f"|format(ganancias) }}</h2>
+            </div>
+            <div class="text-end">
+                <i class="bi bi-wallet2" style="font-size: 2.5rem; opacity: 0.8;"></i>
+            </div>
+        </div>
+
+        <div class="row">
+            <div class="col-lg-8">
+                <h4 class="fw-bold mb-4 text-dark"><i class="bi bi-bell-fill text-warning"></i> Mesas y Pedidos</h4>
+                {% with messages = get_flashed_messages(with_categories=true) %}
+                    {% if messages %}
+                        {% for category, message in messages %}
+                            <div class="alert alert-success py-2 small fw-bold shadow-sm rounded-3"><i class="bi bi-check-circle-fill"></i> {{ message }}</div>
+                        {% endfor %}
+                    {% endif %}
+                {% endwith %}
+                <div class="row">
+                    {% for m in mesas %}
+                    <div class="col-md-6 col-xl-4">
+                        <div class="card card-mesa">
+                            <div class="mesa-header">
+                                <span>🏠 Mesa {{ m.numero }}</span>
+                            </div>
+                            <div class="card-body bg-white p-3">
+                                {% set pedido_activo = m.pedidos|selectattr('estado', 'equalto', 'Pendiente')|list %}
+                                {% if pedido_activo %}
+                                    {% for p in pedido_activo %}
+                                        <div class="badge-pendiente p-2 rounded mb-3 small d-flex justify-content-between shadow-sm">
+                                            <span><strong>Orden #{{ p.id }}</strong></span>
+                                            <span><i class="bi bi-clock"></i> {{ p.fecha_hora.strftime('%H:%M') }}</span>
+                                        </div>
+                                        <h6 class="fw-bold mb-2 text-muted small">PLATOS PEDIDOS:</h6>
+                                        <ul class="list-group list-group-flush mb-3">
+                                            {% for detalle in p.detalles %}
+                                            <li class="list-group-item px-0 py-1 d-flex justify-content-between small border-bottom-0">
+                                                <span>• <strong>{{ detalle.cantidad }}x</strong> {{ detalle.plato.nombre }}</span>
+                                                <span class="text-muted">S/ {{ "%.2f"|format(detalle.precio_unitario * detalle.cantidad) }}</span>
+                                            </li>
+                                            {% endfor %}
+                                        </ul>
+                                        <div class="d-flex justify-content-between align-items-center mb-3 p-2 bg-light rounded">
+                                            <span class="text-muted small fw-bold">TOTAL A COBRAR:</span>
+                                            <h5 class="fw-bold text-success mb-0">S/ {{ "%.2f"|format(p.total) }}</h5>
+                                        </div>
+                                        <form action="/admin/cobrar/{{ p.id }}" method="POST">
+                                            <div class="input-group input-group-sm mb-2">
+                                                <label class="input-group-text bg-white" for="metodo"><i class="bi bi-credit-card"></i></label>
+                                                <select class="form-select text-dark fw-bold" id="metodo" name="metodo_pago">
+                                                    <option value="Efectivo" selected>Efectivo</option>
+                                                    <option value="Yape">Yape</option>
+                                                    <option value="BCP">Transferencia BCP</option>
+                                                    <option value="PagoEfectivo">PagoEfectivo</option>
+                                                </select>
+                                            </div>
+                                            <button type="submit" class="btn btn-success w-100 fw-bold py-2 rounded-3 shadow-sm text-uppercase" style="font-size: 0.85rem;">
+                                                <i class="bi bi-check-circle"></i> Marcar como Cobrado
+                                            </button>
+                                        </form>
+                                    {% endfor %}
+                                {% else %}
+                                    <div class="text-center py-4 text-muted opacity-50">
+                                        <i class="bi bi-cup-hot fs-1"></i>
+                                        <p class="mb-0 mt-2 small fw-bold">Sin pedidos activos</p>
+                                    </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
                 </div>
             </div>
 
-            <div class="card card-panel mb-4 shadow border-0">
-                <div class="card-header bg-dark text-white fw-bold py-3 fs-5">🗺️ MONITOR DE MESAS</div>
-                <div class="card-body bg-light">
-                    <div class="row g-3">
-                        {% for mesa in estado_mesas %}
-                        <div class="col-md-12">
-                            <div class="card h-100 border-{% if mesa.pedidos %}danger border-2{% else %}success{% endif %} shadow-sm" style="border-radius: 12px; overflow: hidden;">
-                                <div class="card-header fw-bold d-flex justify-content-between align-items-center {% if mesa.pedidos %}alerta-pedido{% else %}bg-white text-success{% endif %}">
-                                    <span class="fs-5">MESA {{ mesa.numero }}</span>
-                                    {% if mesa.pedidos %}
-                                        <span class="badge bg-warning text-dark fs-6 shadow-sm">⏳ PEDIDO ACTIVO</span>
-                                    {% else %}
-                                        <span class="badge bg-success">Libre</span>
-                                    {% endif %}
+            <div class="col-lg-4">
+                <div class="card border-0 shadow-sm p-3" style="border-radius: 16px;">
+                    <div class="d-flex justify-content-between align-items-center mb-4">
+                        <h5 class="fw-bold mb-0 text-dark"><i class="bi bi-journal-check"></i> Nuestra Carta</h5>
+                        <button class="btn btn-dark btn-sm rounded-pill fw-bold px-3 shadow-sm" data-bs-toggle="modal" data-bs-target="#modalNuevoPlato">
+                            <i class="bi bi-plus-lg"></i> Agregar
+                        </button>
+                    </div>
+                    
+                    <div class="list-group list-group-flush">
+                        {% for plato in platos %}
+                        <div class="list-group-item px-2 py-3 plato-item {% if not plato.disponible %}plato-oculto{% endif %} border-bottom">
+                            <div class="d-flex justify-content-between align-items-start mb-2">
+                                <div>
+                                    <h6 class="mb-0 small fw-bold text-dark">{{ plato.nombre }}</h6>
+                                    <span class="badge {% if plato.categoria == 'Comida' %}bg-success{% else %}bg-info{% endif %} rounded-pill text-white mt-1" style="font-size: 0.65rem;">{{ plato.categoria }}</span>
                                 </div>
-                                <div class="card-body p-3">
-                                    {% if mesa.pedidos %}
-                                        {% for p in mesa.pedidos %}
-                                            <div class="mb-4 pb-3 border-bottom border-danger">
-                                                <div class="d-flex justify-content-between mb-2">
-                                                    <span class="text-muted fw-bold">🎫 Orden #{{ p.id }}</span>
-                                                    <span class="text-muted">⏱️ {{ p.hora }}</span>
-                                                </div>
-                                                <ul class="list-group mb-3 shadow-sm border">
-                                                    {% for plato in p.platos %}
-                                                    <li class="list-group-item d-flex justify-content-between align-items-center ticket-item">
-                                                        <span><b class="text-primary">{{ plato.cantidad }}x</b> {{ plato.nombre }}</span>
-                                                        <span class="text-success fw-bold">S/ {{ plato.subtotal }}</span>
-                                                    </li>
-                                                    {% endfor %}
-                                                    <li class="list-group-item d-flex justify-content-between align-items-center ticket-total border-top border-warning border-2">
-                                                        <span class="fw-bold text-uppercase">Total a Cobrar:</span>
-                                                        <span class="fw-bold fs-5 text-danger">S/ {{ p.total }}</span>
-                                                    </li>
-                                                </ul>
-                                                <a href="/completar/{{ p.id }}" class="btn btn-success btn-lg w-100 rounded-pill fw-bold shadow">💰 COBRAR Y MARCAR LISTO ✓</a>
-                                            </div>
-                                        {% endfor %}
-                                    {% else %}
-                                        <div class="text-center text-muted my-3"><small>Esperando clientes...</small></div>
-                                    {% endif %}
-                                </div>
+                                <span class="text-success fw-bold small">S/ {{ "%.2f"|format(plato.precio) }}</span>
+                            </div>
+                            
+                            <div class="d-flex gap-2 mt-2">
+                                <form action="/admin/plato/toggle/{{ plato.id }}" method="POST" class="m-0">
+                                    <button type="submit" class="btn btn-light btn-sm border py-0 px-2 text-muted" style="font-size: 0.75rem;">
+                                        {% if plato.disponible %}<i class="bi bi-eye-slash"></i> Ocultar{% else %}<i class="bi bi-eye"></i> Mostrar{% endif %}
+                                    </button>
+                                </form>
+                                <form action="/admin/plato/eliminar/{{ plato.id }}" method="POST" class="m-0" onsubmit="return confirm('¿Seguro que deseas borrar este plato?');">
+                                    <button type="submit" class="btn btn-outline-danger btn-sm py-0 px-2" style="font-size: 0.75rem;">
+                                        <i class="bi bi-trash3"></i>
+                                    </button>
+                                </form>
                             </div>
                         </div>
                         {% endfor %}
@@ -87,62 +140,50 @@
                 </div>
             </div>
         </div>
+    </div>
 
-        <div class="col-lg-6">
-            <div class="card card-panel mb-4 shadow">
-                <div class="card-header header-bg fw-bold py-3 fs-5">📋 GESTIÓN DE LA CARTA</div>
-                <div class="card-body">
-                    <form action="/admin/add_item" method="POST" class="row g-2 mb-4 bg-light border p-3 rounded">
-                        <h6 class="text-success fw-bold mb-3">+ Añadir Plato o Bebida</h6>
-                        <div class="col-md-4">
-                            <select name="cat" class="form-select" required><option value="Comida">Comida</option><option value="Bebida">Bebida</option></select>
-                        </div>
-                        <div class="col-md-5"><input type="text" name="nombre" class="form-control" placeholder="Nombre" required></div>
-                        <div class="col-md-3"><input type="number" name="precio" class="form-control" placeholder="Precio S/" required></div>
-                        <div class="col-md-12 mt-2"><input type="url" name="img" class="form-control" placeholder="URL de la imagen (Opcional)"></div>
-                        <div class="col-md-12 mt-3"><button class="btn btn-success w-100 fw-bold rounded-pill shadow-sm">GUARDAR EN EL MENÚ</button></div>
-                    </form>
-                    <div class="table-responsive" style="max-height: 300px; overflow-y: auto;">
-                        <table class="table table-hover align-middle">
-                            <thead class="table-light sticky-top"><tr><th>Cat.</th><th>Nombre</th><th>Precio</th><th>X</th></tr></thead>
-                            <tbody>
-                                {% for item in menu %}
-                                <tr>
-                                    <td><span class="badge bg-secondary">{{ item.cat }}</span></td>
-                                    <td class="fw-bold">{{ item.nombre }}</td>
-                                    <td class="text-success fw-bold">S/ {{ item.precio }}</td>
-                                    <td><a href="/admin/delete_item/{{ item.id }}" class="btn btn-sm btn-outline-danger py-0 fw-bold">X</a></td>
-                                </tr>
-                                {% endfor %}
-                            </tbody>
-                        </table>
-                    </div>
+    <!-- Modal para Agregar Plato -->
+    <div class="modal fade" id="modalNuevoPlato" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content" style="border-radius: 16px; border: none;">
+                <div class="modal-header bg-light border-0" style="border-top-left-radius: 16px; border-top-right-radius: 16px;">
+                    <h5 class="modal-title fw-bold text-dark"><i class="bi bi-stars text-warning"></i> Crear Nuevo Plato</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
-            </div>
-
-            <div class="card card-panel shadow">
-                <div class="card-header header-bg fw-bold py-3 fs-5">🔐 CONFIGURACIÓN DE MESAS</div>
-                <div class="card-body">
-                    <form action="/admin/add_mesa" method="POST" class="row g-2 mb-4 bg-light border p-3 rounded">
-                        <div class="col-md-5"><input type="text" name="numero" class="form-control" placeholder="N° de Mesa (Ej: 4)" required></div>
-                        <div class="col-md-4"><input type="text" name="clave" class="form-control" placeholder="Contraseña" required></div>
-                        <div class="col-md-3"><button class="btn btn-dark w-100 fw-bold rounded-pill">CREAR</button></div>
+                <div class="modal-body p-4">
+                    <form action="/admin/plato/agregar" method="POST">
+                        <div class="mb-3">
+                            <label class="form-label small fw-bold text-muted">Nombre del Plato o Bebida</label>
+                            <input type="text" name="nombre" class="form-control" placeholder="Ej. Chaufa de Cecina" required>
+                        </div>
+                        <div class="row mb-3">
+                            <div class="col-6">
+                                <label class="form-label small fw-bold text-muted">Precio (S/)</label>
+                                <input type="number" name="precio" class="form-control" step="0.50" placeholder="0.00" required>
+                            </div>
+                            <div class="col-6">
+                                <label class="form-label small fw-bold text-muted">Categoría</label>
+                                <select name="categoria" class="form-select" required>
+                                    <option value="Comida">Comida</option>
+                                    <option value="Bebida">Bebida</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label small fw-bold text-muted"><i class="bi bi-image"></i> Link de la Imagen (Opcional)</label>
+                            <input type="url" name="imagen" class="form-control" placeholder="Ej: https://misitio.com/foto.jpg">
+                        </div>
+                        <div class="mb-4">
+                            <label class="form-label small fw-bold text-muted">Descripción</label>
+                            <textarea name="descripcion" class="form-control" rows="2" placeholder="Ingredientes..."></textarea>
+                        </div>
+                        <button type="submit" class="btn btn-dark w-100 fw-bold py-2 rounded-pill shadow-sm">Guardar y Publicar</button>
                     </form>
-                    <table class="table table-sm">
-                        <thead class="table-light"><tr><th>Mesa</th><th>Contraseña Actual</th><th>Eliminar</th></tr></thead>
-                        <tbody>
-                            {% for m, c in mesas.items() %}
-                            <tr>
-                                <td class="fw-bold text-success fs-5">Mesa {{ m }}</td>
-                                <td><code class="fs-6">{{ c }}</code></td>
-                                <td><a href="/admin/delete_mesa/{{ m }}" class="btn btn-sm btn-danger py-0 fw-bold">X</a></td>
-                            </tr>
-                            {% endfor %}
-                        </tbody>
-                    </table>
                 </div>
             </div>
         </div>
     </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>
