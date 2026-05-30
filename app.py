@@ -50,7 +50,6 @@ class DetallePedido(db.Model):
     cantidad = db.Column(db.Integer, nullable=False)
     precio_unitario = db.Column(db.Float, nullable=False)
     
-    # Relación para obtener el nombre del plato
     plato = db.relationship('Plato')
 
 # ==========================================
@@ -110,7 +109,6 @@ def enviar_pedido():
         flash('Debes seleccionar al menos un plato.', 'error')
         return redirect(url_for('ver_carta'))
 
-    # Lógica de Cuenta Abierta (Rondas)
     pedido_actual = Pedido.query.filter_by(mesa_id=mesa_id, estado='Pendiente').first()
     
     if pedido_actual:
@@ -146,7 +144,6 @@ def logout():
 def admin_login():
     if request.method == 'POST':
         password = request.form.get('password', '').strip()
-        print(f"---- ATENCIÓN: El HTML envió la clave: '{password}' ----")
         
         if password == 'admin':
             session['admin_logged_in'] = True
@@ -164,13 +161,11 @@ def admin_dashboard():
         
     todas_mesas = Mesa.query.order_by(Mesa.numero).all()
     todos_platos = Plato.query.all()
-    pedidos_activos = Pedido.query.filter_by(estado='Pendiente').all()
     
-    # Calcular ganancias del día
     pedidos_pagados = Pedido.query.filter_by(estado='Pagado').all()
     ganancias_hoy = sum(pedido.total for pedido in pedidos_pagados)
     
-    return render_template('admin.html', mesas=todas_mesas, platos=todos_platos, pedidos=pedidos_activos, ganancias=ganancias_hoy)
+    return render_template('admin.html', mesas=todas_mesas, platos=todos_platos, ganancias=ganancias_hoy)
 
 @app.route('/admin/cobrar/<int:pedido_id>', methods=['POST'])
 def cobrar_pedido(pedido_id):
@@ -182,14 +177,61 @@ def cobrar_pedido(pedido_id):
         pedido.estado = 'Pagado'
         pedido.metodo_pago = request.form.get('metodo_pago', 'Efectivo')
         db.session.commit()
-        flash(f'Mesa liberada. Pedido cobrado con éxito.', 'success')
+        flash('Mesa liberada. Pedido cobrado con éxito.', 'success')
         
     return redirect(url_for('admin_dashboard'))
 
-@app.route('/admin/logout')
-def admin_logout():
-    session.pop('admin_logged_in', None)
-    return redirect(url_for('admin_login'))
+@app.route('/admin/limpiar-caja', methods=['POST'])
+def limpiar_caja():
+    if not session.get('admin_logged_in'):
+        return redirect(url_for('admin_login'))
+    
+    pedidos_pagados = Pedido.query.filter_by(estado='Pagado').all()
+    for p in pedidos_pagados:
+        p.estado = 'Archivado'
+    
+    db.session.commit()
+    flash('Caja reiniciada a S/ 0.00. ¡Listos para nuevas ventas!', 'success')
+    return redirect(url_for('admin_dashboard'))
+
+@app.route('/admin/mesa/agregar', methods=['POST'])
+def agregar_mesa():
+    if not session.get('admin_logged_in'):
+        return redirect(url_for('admin_login'))
+    
+    numero = request.form.get('numero')
+    password_personalizada = request.form.get('password')
+    
+    mesa_existente = Mesa.query.filter_by(numero=numero).first()
+    if mesa_existente:
+        flash(f'La mesa {numero} ya existe.', 'error')
+        return redirect(url_for('admin_dashboard'))
+        
+    password_mesa = generate_password_hash(password_personalizada)
+    nueva_mesa = Mesa(numero=numero, password_hash=password_mesa)
+    
+    db.session.add(nueva_mesa)
+    db.session.commit()
+    
+    flash(f'Mesa {numero} agregada con éxito.', 'success')
+    return redirect(url_for('admin_dashboard'))
+
+@app.route('/admin/mesa/cambiar-clave/<int:id>', methods=['POST'])
+def cambiar_clave_mesa(id):
+    if not session.get('admin_logged_in'):
+        return redirect(url_for('admin_login'))
+        
+    mesa = Mesa.query.get(id)
+    nueva_clave = request.form.get('nueva_clave')
+    
+    if mesa and nueva_clave:
+        mesa.password_hash = generate_password_hash(nueva_clave)
+        db.session.commit()
+        flash(f'Clave de la Mesa {mesa.numero} actualizada correctamente.', 'success')
+    else:
+        flash('Error al actualizar la clave.', 'error')
+        
+    return redirect(url_for('admin_dashboard'))
 
 @app.route('/admin/plato/agregar', methods=['POST'])
 def agregar_plato():
@@ -209,7 +251,7 @@ def agregar_plato():
     db.session.add(nuevo_plato)
     db.session.commit()
     
-    flash(f'Plato "{nombre}" agregado exitosamente a la carta.', 'success')
+    flash(f'Plato "{nombre}" agregado.', 'success')
     return redirect(url_for('admin_dashboard'))
 
 @app.route('/admin/plato/toggle/<int:id>', methods=['POST'])
@@ -236,6 +278,11 @@ def eliminar_plato(id):
         flash('Plato eliminado de la carta.', 'success')
         
     return redirect(url_for('admin_dashboard'))
+
+@app.route('/admin/logout')
+def admin_logout():
+    session.pop('admin_logged_in', None)
+    return redirect(url_for('admin_login'))
 
 # ==========================================
 # 5. INICIALIZACIÓN

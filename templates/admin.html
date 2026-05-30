@@ -26,33 +26,69 @@
     </nav>
 
     <div class="container-fluid py-4 px-4">
+        
+        <!-- SECCIÓN: RESUMEN DE CAJA -->
         <div class="caja-resumen d-flex justify-content-between align-items-center">
             <div>
                 <h6 class="mb-1 text-uppercase fw-bold" style="letter-spacing: 1px; color: var(--selva-accent);">Caja Actual</h6>
                 <h2 class="mb-0 fw-bold">S/ {{ "%.2f"|format(ganancias) }}</h2>
             </div>
             <div class="text-end">
+                <form action="/admin/limpiar-caja" method="POST" onsubmit="return confirm('¿Seguro que deseas reiniciar la caja a cero? Los pedidos actuales se archivarán y comenzará un nuevo día.');">
+                    <button type="submit" class="btn btn-outline-warning btn-sm fw-bold mb-2 shadow-sm">
+                        <i class="bi bi-trash"></i> Limpiar Caja
+                    </button>
+                </form>
                 <i class="bi bi-wallet2" style="font-size: 2.5rem; opacity: 0.8;"></i>
             </div>
         </div>
 
         <div class="row">
+            <!-- SECCIÓN: MESAS Y PEDIDOS -->
             <div class="col-lg-8">
                 <h4 class="fw-bold mb-4 text-dark"><i class="bi bi-bell-fill text-warning"></i> Mesas y Pedidos</h4>
+                
                 {% with messages = get_flashed_messages(with_categories=true) %}
                     {% if messages %}
                         {% for category, message in messages %}
-                            <div class="alert alert-success py-2 small fw-bold shadow-sm rounded-3"><i class="bi bi-check-circle-fill"></i> {{ message }}</div>
+                            <div class="alert alert-{% if category == 'error' %}danger{% else %}success{% endif %} py-2 small fw-bold shadow-sm rounded-3">
+                                <i class="bi bi-info-circle-fill"></i> {{ message }}
+                            </div>
                         {% endfor %}
                     {% endif %}
                 {% endwith %}
+
                 <div class="row">
                     {% for m in mesas %}
                     <div class="col-md-6 col-xl-4">
                         <div class="card card-mesa">
-                            <div class="mesa-header">
-                                <span>🏠 Mesa {{ m.numero }}</span>
+                            
+                            <!-- CABECERA DE LA MESA Y BOTÓN CAMBIAR CLAVE -->
+                            <div class="mesa-header align-items-center">
+                                <span class="mb-0">🏠 Mesa {{ m.numero }}</span>
+                                <button type="button" class="btn btn-sm btn-outline-light py-0 px-2 border-0" data-bs-toggle="modal" data-bs-target="#modalClave{{ m.id }}" title="Cambiar Clave">
+                                    <i class="bi bi-key-fill"></i> Clave
+                                </button>
                             </div>
+
+                            <!-- MODAL PARA CAMBIAR CLAVE DE ESTA MESA -->
+                            <div class="modal fade" id="modalClave{{ m.id }}" tabindex="-1" aria-hidden="true">
+                                <div class="modal-dialog modal-sm modal-dialog-centered">
+                                    <div class="modal-content">
+                                        <div class="modal-header bg-warning text-dark py-2">
+                                            <h6 class="modal-title fw-bold mb-0">Cambiar clave: Mesa {{ m.numero }}</h6>
+                                            <button type="button" class="btn-close btn-sm" data-bs-dismiss="modal" aria-label="Close"></button>
+                                        </div>
+                                        <div class="modal-body p-3">
+                                            <form action="/admin/mesa/cambiar-clave/{{ m.id }}" method="POST">
+                                                <input type="text" name="nueva_clave" class="form-control form-control-sm mb-2" placeholder="Escribe la nueva contraseña" required>
+                                                <button type="submit" class="btn btn-dark btn-sm w-100 fw-bold">Actualizar Clave</button>
+                                            </form>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
                             <div class="card-body bg-white p-3">
                                 {% set pedido_activo = m.pedidos|selectattr('estado', 'equalto', 'Pendiente')|list %}
                                 {% if pedido_activo %}
@@ -102,12 +138,25 @@
                 </div>
             </div>
 
+            <!-- SECCIÓN: BARRA LATERAL (CARTA Y CREAR MESA) -->
             <div class="col-lg-4">
+                
+                <!-- AGREGAR MESA CON CONTRASEÑA PERSONALIZADA -->
+                <div class="card border-0 shadow-sm p-3 mb-4" style="border-radius: 16px;">
+                    <h5 class="fw-bold mb-3 text-dark"><i class="bi bi-plus-circle-fill text-primary"></i> Nueva Mesa</h5>
+                    <form action="/admin/mesa/agregar" method="POST" class="d-flex flex-column gap-2">
+                        <input type="number" name="numero" class="form-control bg-light" placeholder="Número de mesa (Ej. 6)" required>
+                        <input type="text" name="password" class="form-control bg-light" placeholder="Contraseña (Ej. mariposa22)" required>
+                        <button type="submit" class="btn btn-dark fw-bold px-4 rounded-3">Crear Mesa</button>
+                    </form>
+                </div>
+
+                <!-- GESTIÓN DE CARTA -->
                 <div class="card border-0 shadow-sm p-3" style="border-radius: 16px;">
                     <div class="d-flex justify-content-between align-items-center mb-4">
                         <h5 class="fw-bold mb-0 text-dark"><i class="bi bi-journal-check"></i> Nuestra Carta</h5>
                         <button class="btn btn-dark btn-sm rounded-pill fw-bold px-3 shadow-sm" data-bs-toggle="modal" data-bs-target="#modalNuevoPlato">
-                            <i class="bi bi-plus-lg"></i> Agregar
+                            <i class="bi bi-plus-lg"></i> Agregar Plato
                         </button>
                     </div>
                     
@@ -138,11 +187,12 @@
                         {% endfor %}
                     </div>
                 </div>
+
             </div>
         </div>
     </div>
 
-    <!-- Modal para Agregar Plato -->
+    <!-- MODAL NUEVO PLATO -->
     <div class="modal fade" id="modalNuevoPlato" tabindex="-1" aria-hidden="true">
         <div class="modal-dialog modal-dialog-centered">
             <div class="modal-content" style="border-radius: 16px; border: none;">
