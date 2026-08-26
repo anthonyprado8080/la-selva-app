@@ -49,7 +49,6 @@ class DetallePedido(db.Model):
     plato_id = db.Column(db.Integer, db.ForeignKey('plato.id'), nullable=False)
     cantidad = db.Column(db.Integer, nullable=False)
     precio_unitario = db.Column(db.Float, nullable=False)
-    
     plato = db.relationship('Plato')
 
 # ==========================================
@@ -66,6 +65,8 @@ def login_mesa():
         password = request.form.get('password')
         mesa = Mesa.query.filter_by(numero=numero_mesa).first()
         
+        # Si la contraseña es correcta, ingresan a la carta.
+        # No bloqueamos si hay pedido, para que la familia pueda pedir un juane extra.
         if mesa and check_password_hash(mesa.password_hash, password):
             session['mesa_id'] = mesa.id
             session['mesa_numero'] = mesa.numero
@@ -140,18 +141,17 @@ def logout():
 # ==========================================
 # 4. RUTAS DE ADMINISTRACIÓN
 # ==========================================
+# RESTAURAMOS EL LOGIN DE ADMINISTRADOR
 @app.route('/admin-login', methods=['GET', 'POST'])
 def admin_login():
     if request.method == 'POST':
         password = request.form.get('password', '').strip()
-        
         if password == 'admin':
             session['admin_logged_in'] = True
             return redirect(url_for('admin_dashboard'))
         else:
-            flash('Contraseña de administrador incorrecta.', 'error')
+            flash('Contraseña incorrecta.', 'error')
             return redirect(url_for('admin_login'))
-            
     return render_template('login_admin.html')
 
 @app.route('/admin')
@@ -177,9 +177,15 @@ def cobrar_pedido(pedido_id):
         pedido.estado = 'Pagado'
         pedido.metodo_pago = request.form.get('metodo_pago', 'Efectivo')
         db.session.commit()
-        flash('Mesa liberada. Pedido cobrado con éxito.', 'success')
-        
+        return redirect(url_for('ver_boleta', pedido_id=pedido.id))
     return redirect(url_for('admin_dashboard'))
+
+@app.route('/admin/boleta/<int:pedido_id>')
+def ver_boleta(pedido_id):
+    if not session.get('admin_logged_in'):
+        return redirect(url_for('admin_login'))
+    pedido = Pedido.query.get_or_404(pedido_id)
+    return render_template('boleta.html', pedido=pedido)
 
 @app.route('/admin/limpiar-caja', methods=['POST'])
 def limpiar_caja():
@@ -191,7 +197,7 @@ def limpiar_caja():
         p.estado = 'Archivado'
     
     db.session.commit()
-    flash('Caja reiniciada a S/ 0.00. ¡Listos para nuevas ventas!', 'success')
+    flash('Caja reiniciada a S/ 0.00.', 'success')
     return redirect(url_for('admin_dashboard'))
 
 @app.route('/admin/mesa/agregar', methods=['POST'])
@@ -212,8 +218,6 @@ def agregar_mesa():
     
     db.session.add(nueva_mesa)
     db.session.commit()
-    
-    flash(f'Mesa {numero} agregada con éxito.', 'success')
     return redirect(url_for('admin_dashboard'))
 
 @app.route('/admin/mesa/cambiar-clave/<int:id>', methods=['POST'])
@@ -227,9 +231,7 @@ def cambiar_clave_mesa(id):
     if mesa and nueva_clave:
         mesa.password_hash = generate_password_hash(nueva_clave)
         db.session.commit()
-        flash(f'Clave de la Mesa {mesa.numero} actualizada correctamente.', 'success')
-    else:
-        flash('Error al actualizar la clave.', 'error')
+        flash(f'Clave de la Mesa {mesa.numero} actualizada.', 'success')
         
     return redirect(url_for('admin_dashboard'))
 
@@ -239,7 +241,7 @@ def agregar_plato():
         return redirect(url_for('admin_login'))
         
     nombre = request.form.get('nombre')
-    descripcion = request.form.get('descripcion')
+    descripcion = request.form.get('descripcion') 
     precio = float(request.form.get('precio', 0))
     categoria = request.form.get('categoria')
     imagen = request.form.get('imagen', '').strip()
@@ -250,8 +252,6 @@ def agregar_plato():
     nuevo_plato = Plato(nombre=nombre, descripcion=descripcion, precio=precio, categoria=categoria, imagen=imagen)
     db.session.add(nuevo_plato)
     db.session.commit()
-    
-    flash(f'Plato "{nombre}" agregado.', 'success')
     return redirect(url_for('admin_dashboard'))
 
 @app.route('/admin/plato/toggle/<int:id>', methods=['POST'])
@@ -263,7 +263,6 @@ def toggle_plato(id):
     if plato:
         plato.disponible = not plato.disponible
         db.session.commit()
-        
     return redirect(url_for('admin_dashboard'))
 
 @app.route('/admin/plato/eliminar/<int:id>', methods=['POST'])
@@ -275,8 +274,6 @@ def eliminar_plato(id):
     if plato:
         db.session.delete(plato)
         db.session.commit()
-        flash('Plato eliminado de la carta.', 'success')
-        
     return redirect(url_for('admin_dashboard'))
 
 @app.route('/admin/logout')

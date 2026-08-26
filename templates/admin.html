@@ -2,238 +2,157 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Panel de Control - La Selva</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
+    <title>Admin Dashboard</title>
     <style>
-        :root { --selva-dark: #1e3d1a; --selva-accent: #d4a373; }
-        body { background-color: #f4f6f4; font-family: system-ui, sans-serif; }
-        .admin-navbar { background: var(--selva-dark); }
-        .card-mesa { border-radius: 16px; border: none; box-shadow: 0 4px 12px rgba(0,0,0,0.05); overflow: hidden; margin-bottom: 1.5rem; }
-        .mesa-header { background: var(--selva-dark); color: white; padding: 12px 15px; font-weight: bold; display: flex; justify-content: space-between; }
-        .badge-pendiente { background-color: #fff3cd; color: #856404; border: 1px solid #ffeeba; }
-        .plato-item { transition: all 0.2s ease; border-radius: 8px; }
-        .plato-item:hover { background-color: #f8f9fa; }
-        .plato-oculto { opacity: 0.5; background-color: #f1f1f1; }
-        .caja-resumen { background: linear-gradient(135deg, var(--selva-dark), #2b5726); color: white; border-radius: 16px; padding: 1.5rem; margin-bottom: 2rem; box-shadow: 0 5px 15px rgba(0,0,0,0.1); }
+        @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&display=swap');
+        body { font-family: 'Poppins', sans-serif; margin: 0; padding: 20px; background-color: #f4f7f6; color: #2c3e50; }
+        .container { max-width: 1200px; margin: 0 auto; background: white; padding: 30px; border-radius: 15px; box-shadow: 0 10px 30px rgba(0,0,0,0.05); }
+        .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px; border-bottom: 2px solid #eee; padding-bottom: 20px; }
+        .header h1 { margin: 0; color: #1abc9c; }
+        .header a { color: #e74c3c; text-decoration: none; font-weight: bold; background: #ffebee; padding: 8px 15px; border-radius: 8px; }
+        .section { margin-bottom: 40px; padding: 20px; background: #ffffff; border: 1px solid #eee; border-radius: 12px; }
+        h2 { color: #34495e; font-size: 1.5rem; margin-top: 0; }
+        
+        table { width: 100%; border-collapse: separate; border-spacing: 0; margin-top: 15px; }
+        th { background-color: #1abc9c; color: white; padding: 15px; text-align: left; }
+        th:first-child { border-top-left-radius: 10px; } th:last-child { border-top-right-radius: 10px; }
+        td { padding: 15px; border-bottom: 1px solid #f0f0f0; vertical-align: top; }
+        tr:hover td { background-color: #f9fdfc; }
+        
+        button { background-color: #1abc9c; color: white; border: none; padding: 10px 15px; cursor: pointer; border-radius: 8px; font-family: 'Poppins'; font-weight: 600; transition: all 0.3s; }
+        button:hover { background-color: #16a085; transform: translateY(-2px); box-shadow: 0 5px 15px rgba(26, 188, 156, 0.3); }
+        .btn-danger { background-color: #e74c3c; } .btn-danger:hover { background-color: #c0392b; }
+        .btn-small { padding: 6px 10px; font-size: 0.8rem; background-color: #3498db; } .btn-small:hover { background-color: #2980b9; }
+        
+        input, select { padding: 10px; border: 1px solid #ddd; border-radius: 8px; font-family: 'Poppins'; outline: none; margin-right: 5px; margin-bottom: 5px; }
+        input:focus, select:focus { border-color: #1abc9c; }
+        .pedido-detalle { margin: 10px 0 0 15px; color: #555; }
+        .flash { background-color: #d4edda; color: #155724; padding: 15px; border-radius: 8px; border-left: 5px solid #28a745; margin-bottom: 20px;}
+        .caja-total { font-size: 2rem; color: #27ae60; font-weight: bold; margin: 10px 0 20px 0; }
     </style>
 </head>
 <body>
-    <nav class="navbar admin-navbar navbar-dark sticky-top px-4 py-3 shadow-sm">
-        <a class="navbar-brand fw-bold" href="#"><i class="bi bi-cpu-fill"></i> La Selva del Prado | Panel Central</a>
-        <a href="/admin/logout" class="btn btn-outline-light rounded-pill fw-bold px-4"><i class="bi bi-box-arrow-right"></i> Salir del Panel</a>
-    </nav>
+<div class="container">
+    <div class="header">
+        <h1>🌿 Admin Panel - La Selva del Prado</h1>
+        <a href="/admin/logout">Cerrar Sesión</a>
+    </div>
 
-    <div class="container-fluid py-4 px-4">
-        
-        <!-- SECCIÓN: RESUMEN DE CAJA -->
-        <div class="caja-resumen d-flex justify-content-between align-items-center">
-            <div>
-                <h6 class="mb-1 text-uppercase fw-bold" style="letter-spacing: 1px; color: var(--selva-accent);">Caja Actual</h6>
-                <h2 class="mb-0 fw-bold">S/ {{ "%.2f"|format(ganancias) }}</h2>
-            </div>
-            <div class="text-end">
-                <form action="/admin/limpiar-caja" method="POST" onsubmit="return confirm('¿Seguro que deseas reiniciar la caja a cero? Los pedidos actuales se archivarán y comenzará un nuevo día.');">
-                    <button type="submit" class="btn btn-outline-warning btn-sm fw-bold mb-2 shadow-sm">
-                        <i class="bi bi-trash"></i> Limpiar Caja
-                    </button>
-                </form>
-                <i class="bi bi-wallet2" style="font-size: 2.5rem; opacity: 0.8;"></i>
-            </div>
-        </div>
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% if messages %}
+        {% for category, message in messages %}
+          <div class="flash">{{ message }}</div>
+        {% endfor %}
+      {% endif %}
+    {% endwith %}
 
-        <div class="row">
-            <!-- SECCIÓN: MESAS Y PEDIDOS -->
-            <div class="col-lg-8">
-                <h4 class="fw-bold mb-4 text-dark"><i class="bi bi-bell-fill text-warning"></i> Mesas y Pedidos</h4>
-                
-                {% with messages = get_flashed_messages(with_categories=true) %}
-                    {% if messages %}
-                        {% for category, message in messages %}
-                            <div class="alert alert-{% if category == 'error' %}danger{% else %}success{% endif %} py-2 small fw-bold shadow-sm rounded-3">
-                                <i class="bi bi-info-circle-fill"></i> {{ message }}
-                            </div>
-                        {% endfor %}
+    <div class="section">
+        <h2>💰 Caja del Día</h2>
+        <div class="caja-total">S/ {{ "%.2f"|format(ganancias) }}</div>
+        <form action="/admin/limpiar-caja" method="POST">
+            <button type="submit" onclick="return confirm('¿Reiniciar la caja a S/0.00?');">Reiniciar Caja</button>
+        </form>
+    </div>
+
+    <div class="section">
+        <h2>🪑 Gestión de Mesas y Pedidos</h2>
+        <form action="/admin/mesa/agregar" method="POST" style="margin-bottom: 15px;">
+            <input type="number" name="numero" placeholder="N° Mesa" required style="width: 100px;">
+            <input type="text" name="password" placeholder="Contraseña" required>
+            <button type="submit">Agregar Mesa</button>
+        </form>
+        <table>
+            <tr>
+                <th>Mesa</th>
+                <th>Detalle del Pedido</th>
+                <th>Total / Cobro</th>
+                <th>Opciones de Mesa</th>
+            </tr>
+            {% for mesa in mesas %}
+            <tr>
+                <td><strong>Mesa {{ mesa.numero }}</strong></td>
+                <td>
+                    {% if mesa.pedidos %}
+                        {% set pedido_pendiente = mesa.pedidos | selectattr("estado", "equalto", "Pendiente") | first %}
+                        {% if pedido_pendiente %}
+                            <span style="color: #f39c12; font-weight: bold;">🔴 Cocinando / Comiendo</span>
+                            <ul class="pedido-detalle">
+                            {% for detalle in pedido_pendiente.detalles %}
+                                <li>{{ detalle.cantidad }}x {{ detalle.plato.nombre }}</li>
+                            {% endfor %}
+                            </ul>
+                        {% else %}
+                            <span style="color: #bdc3c7;">Libre</span>
+                        {% endif %}
+                    {% else %}
+                        <span style="color: #bdc3c7;">Libre</span>
                     {% endif %}
-                {% endwith %}
-
-                <div class="row">
-                    {% for m in mesas %}
-                    <div class="col-md-6 col-xl-4">
-                        <div class="card card-mesa">
-                            
-                            <!-- CABECERA DE LA MESA Y BOTÓN CAMBIAR CLAVE -->
-                            <div class="mesa-header align-items-center">
-                                <span class="mb-0">🏠 Mesa {{ m.numero }}</span>
-                                <button type="button" class="btn btn-sm btn-outline-light py-0 px-2 border-0" data-bs-toggle="modal" data-bs-target="#modalClave{{ m.id }}" title="Cambiar Clave">
-                                    <i class="bi bi-key-fill"></i> Clave
-                                </button>
-                            </div>
-
-                            <!-- MODAL PARA CAMBIAR CLAVE DE ESTA MESA -->
-                            <div class="modal fade" id="modalClave{{ m.id }}" tabindex="-1" aria-hidden="true">
-                                <div class="modal-dialog modal-sm modal-dialog-centered">
-                                    <div class="modal-content">
-                                        <div class="modal-header bg-warning text-dark py-2">
-                                            <h6 class="modal-title fw-bold mb-0">Cambiar clave: Mesa {{ m.numero }}</h6>
-                                            <button type="button" class="btn-close btn-sm" data-bs-dismiss="modal" aria-label="Close"></button>
-                                        </div>
-                                        <div class="modal-body p-3">
-                                            <form action="/admin/mesa/cambiar-clave/{{ m.id }}" method="POST">
-                                                <input type="text" name="nueva_clave" class="form-control form-control-sm mb-2" placeholder="Escribe la nueva contraseña" required>
-                                                <button type="submit" class="btn btn-dark btn-sm w-100 fw-bold">Actualizar Clave</button>
-                                            </form>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <div class="card-body bg-white p-3">
-                                {% set pedido_activo = m.pedidos|selectattr('estado', 'equalto', 'Pendiente')|list %}
-                                {% if pedido_activo %}
-                                    {% for p in pedido_activo %}
-                                        <div class="badge-pendiente p-2 rounded mb-3 small d-flex justify-content-between shadow-sm">
-                                            <span><strong>Orden #{{ p.id }}</strong></span>
-                                            <span><i class="bi bi-clock"></i> {{ p.fecha_hora.strftime('%H:%M') }}</span>
-                                        </div>
-                                        <h6 class="fw-bold mb-2 text-muted small">PLATOS PEDIDOS:</h6>
-                                        <ul class="list-group list-group-flush mb-3">
-                                            {% for detalle in p.detalles %}
-                                            <li class="list-group-item px-0 py-1 d-flex justify-content-between small border-bottom-0">
-                                                <span>• <strong>{{ detalle.cantidad }}x</strong> {{ detalle.plato.nombre }}</span>
-                                                <span class="text-muted">S/ {{ "%.2f"|format(detalle.precio_unitario * detalle.cantidad) }}</span>
-                                            </li>
-                                            {% endfor %}
-                                        </ul>
-                                        <div class="d-flex justify-content-between align-items-center mb-3 p-2 bg-light rounded">
-                                            <span class="text-muted small fw-bold">TOTAL A COBRAR:</span>
-                                            <h5 class="fw-bold text-success mb-0">S/ {{ "%.2f"|format(p.total) }}</h5>
-                                        </div>
-                                        <form action="/admin/cobrar/{{ p.id }}" method="POST">
-                                            <div class="input-group input-group-sm mb-2">
-                                                <label class="input-group-text bg-white" for="metodo"><i class="bi bi-credit-card"></i></label>
-                                                <select class="form-select text-dark fw-bold" id="metodo" name="metodo_pago">
-                                                    <option value="Efectivo" selected>Efectivo</option>
-                                                    <option value="Yape">Yape</option>
-                                                    <option value="BCP">Transferencia BCP</option>
-                                                    <option value="PagoEfectivo">PagoEfectivo</option>
-                                                </select>
-                                            </div>
-                                            <button type="submit" class="btn btn-success w-100 fw-bold py-2 rounded-3 shadow-sm text-uppercase" style="font-size: 0.85rem;">
-                                                <i class="bi bi-check-circle"></i> Marcar como Cobrado
-                                            </button>
-                                        </form>
-                                    {% endfor %}
-                                {% else %}
-                                    <div class="text-center py-4 text-muted opacity-50">
-                                        <i class="bi bi-cup-hot fs-1"></i>
-                                        <p class="mb-0 mt-2 small fw-bold">Sin pedidos activos</p>
-                                    </div>
-                                {% endif %}
-                            </div>
-                        </div>
-                    </div>
-                    {% endfor %}
-                </div>
-            </div>
-
-            <!-- SECCIÓN: BARRA LATERAL (CARTA Y CREAR MESA) -->
-            <div class="col-lg-4">
-                
-                <!-- AGREGAR MESA CON CONTRASEÑA PERSONALIZADA -->
-                <div class="card border-0 shadow-sm p-3 mb-4" style="border-radius: 16px;">
-                    <h5 class="fw-bold mb-3 text-dark"><i class="bi bi-plus-circle-fill text-primary"></i> Nueva Mesa</h5>
-                    <form action="/admin/mesa/agregar" method="POST" class="d-flex flex-column gap-2">
-                        <input type="number" name="numero" class="form-control bg-light" placeholder="Número de mesa (Ej. 6)" required>
-                        <input type="text" name="password" class="form-control bg-light" placeholder="Contraseña (Ej. mariposa22)" required>
-                        <button type="submit" class="btn btn-dark fw-bold px-4 rounded-3">Crear Mesa</button>
+                </td>
+                <td>
+                    {% if mesa.pedidos and pedido_pendiente %}
+                        <strong style="color: #27ae60; font-size: 1.1rem;">S/ {{ "%.2f"|format(pedido_pendiente.total) }}</strong>
+                        <form action="/admin/cobrar/{{ pedido_pendiente.id }}" method="POST" style="margin-top: 10px;">
+                            <select name="metodo_pago" required>
+                                <option value="Efectivo">Efectivo</option>
+                                <option value="Yape/Plin">Yape / Plin</option>
+                                <option value="Tarjeta">Tarjeta</option>
+                            </select>
+                            <button type="submit" style="width: 100%; margin-top:5px;">Cobrar y Boleta</button>
+                        </form>
+                    {% else %}
+                        S/ 0.00
+                    {% endif %}
+                </td>
+                <td>
+                    <!-- AQUÍ ESTÁ EL CAMBIO DE CLAVE RESTAURADO -->
+                    <form action="/admin/mesa/cambiar-clave/{{ mesa.id }}" method="POST">
+                        <input type="text" name="nueva_clave" placeholder="Nueva clave" required style="width: 100px;">
+                        <button type="submit" class="btn-small">Cambiar Clave</button>
                     </form>
-                </div>
-
-                <!-- GESTIÓN DE CARTA -->
-                <div class="card border-0 shadow-sm p-3" style="border-radius: 16px;">
-                    <div class="d-flex justify-content-between align-items-center mb-4">
-                        <h5 class="fw-bold mb-0 text-dark"><i class="bi bi-journal-check"></i> Nuestra Carta</h5>
-                        <button class="btn btn-dark btn-sm rounded-pill fw-bold px-3 shadow-sm" data-bs-toggle="modal" data-bs-target="#modalNuevoPlato">
-                            <i class="bi bi-plus-lg"></i> Agregar Plato
-                        </button>
-                    </div>
-                    
-                    <div class="list-group list-group-flush">
-                        {% for plato in platos %}
-                        <div class="list-group-item px-2 py-3 plato-item {% if not plato.disponible %}plato-oculto{% endif %} border-bottom">
-                            <div class="d-flex justify-content-between align-items-start mb-2">
-                                <div>
-                                    <h6 class="mb-0 small fw-bold text-dark">{{ plato.nombre }}</h6>
-                                    <span class="badge {% if plato.categoria == 'Comida' %}bg-success{% else %}bg-info{% endif %} rounded-pill text-white mt-1" style="font-size: 0.65rem;">{{ plato.categoria }}</span>
-                                </div>
-                                <span class="text-success fw-bold small">S/ {{ "%.2f"|format(plato.precio) }}</span>
-                            </div>
-                            
-                            <div class="d-flex gap-2 mt-2">
-                                <form action="/admin/plato/toggle/{{ plato.id }}" method="POST" class="m-0">
-                                    <button type="submit" class="btn btn-light btn-sm border py-0 px-2 text-muted" style="font-size: 0.75rem;">
-                                        {% if plato.disponible %}<i class="bi bi-eye-slash"></i> Ocultar{% else %}<i class="bi bi-eye"></i> Mostrar{% endif %}
-                                    </button>
-                                </form>
-                                <form action="/admin/plato/eliminar/{{ plato.id }}" method="POST" class="m-0" onsubmit="return confirm('¿Seguro que deseas borrar este plato?');">
-                                    <button type="submit" class="btn btn-outline-danger btn-sm py-0 px-2" style="font-size: 0.75rem;">
-                                        <i class="bi bi-trash3"></i>
-                                    </button>
-                                </form>
-                            </div>
-                        </div>
-                        {% endfor %}
-                    </div>
-                </div>
-
-            </div>
-        </div>
+                </td>
+            </tr>
+            {% endfor %}
+        </table>
     </div>
 
-    <!-- MODAL NUEVO PLATO -->
-    <div class="modal fade" id="modalNuevoPlato" tabindex="-1" aria-hidden="true">
-        <div class="modal-dialog modal-dialog-centered">
-            <div class="modal-content" style="border-radius: 16px; border: none;">
-                <div class="modal-header bg-light border-0" style="border-top-left-radius: 16px; border-top-right-radius: 16px;">
-                    <h5 class="modal-title fw-bold text-dark"><i class="bi bi-stars text-warning"></i> Crear Nuevo Plato</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                </div>
-                <div class="modal-body p-4">
-                    <form action="/admin/plato/agregar" method="POST">
-                        <div class="mb-3">
-                            <label class="form-label small fw-bold text-muted">Nombre del Plato o Bebida</label>
-                            <input type="text" name="nombre" class="form-control" placeholder="Ej. Chaufa de Cecina" required>
-                        </div>
-                        <div class="row mb-3">
-                            <div class="col-6">
-                                <label class="form-label small fw-bold text-muted">Precio (S/)</label>
-                                <input type="number" name="precio" class="form-control" step="0.50" placeholder="0.00" required>
-                            </div>
-                            <div class="col-6">
-                                <label class="form-label small fw-bold text-muted">Categoría</label>
-                                <select name="categoria" class="form-select" required>
-                                    <option value="Comida">Comida</option>
-                                    <option value="Bebida">Bebida</option>
-                                </select>
-                            </div>
-                        </div>
-                        <div class="mb-3">
-                            <label class="form-label small fw-bold text-muted"><i class="bi bi-image"></i> Link de la Imagen (Opcional)</label>
-                            <input type="url" name="imagen" class="form-control" placeholder="Ej: https://misitio.com/foto.jpg">
-                        </div>
-                        <div class="mb-4">
-                            <label class="form-label small fw-bold text-muted">Descripción</label>
-                            <textarea name="descripcion" class="form-control" rows="2" placeholder="Ingredientes..."></textarea>
-                        </div>
-                        <button type="submit" class="btn btn-dark w-100 fw-bold py-2 rounded-pill shadow-sm">Guardar y Publicar</button>
-                    </form>
-                </div>
-            </div>
-        </div>
+    <div class="section">
+        <h2>🍔 Tu Carta</h2>
+        <form action="/admin/plato/agregar" method="POST" style="margin-bottom: 15px;">
+            <input type="text" name="nombre" placeholder="Nombre" required>
+            <!-- AQUÍ ESTÁ LA DESCRIPCIÓN RESTAURADA -->
+            <input type="text" name="descripcion" placeholder="Descripción del plato"> 
+            <input type="number" step="0.1" name="precio" placeholder="S/ Precio" required style="width: 90px;">
+            <select name="categoria">
+                <option value="Comida">Comida</option><option value="Bebida">Bebida</option>
+            </select>
+            <input type="text" name="imagen" placeholder="URL de imagen (opcional)">
+            <button type="submit">Agregar Plato</button>
+        </form>
+        <table>
+            <tr>
+                <th>Plato</th>
+                <th>Categoría</th>
+                <th>Precio</th>
+                <th>Estado</th>
+                <th>Opciones</th>
+            </tr>
+            {% for plato in platos %}
+            <tr>
+                <td><strong>{{ plato.nombre }}</strong><br><small style="color: gray;">{{ plato.descripcion }}</small></td>
+                <td>{{ plato.categoria }}</td>
+                <td>S/ {{ "%.2f"|format(plato.precio) }}</td>
+                <td>
+                    {% if plato.disponible %}<span style="color: green; font-weight: bold;">✔ Activo</span>
+                    {% else %}<span style="color: red; font-weight: bold;">✖ Agotado</span>{% endif %}
+                </td>
+                <td>
+                    <form action="/admin/plato/toggle/{{ plato.id }}" method="POST" style="display:inline;"><button type="submit" style="background:#f39c12;">Pausar/Activar</button></form>
+                    <form action="/admin/plato/eliminar/{{ plato.id }}" method="POST" style="display:inline;"><button type="submit" class="btn-danger" onclick="return confirm('¿Borrar plato permanentemente?');">Borrar</button></form>
+                </td>
+            </tr>
+            {% endfor %}
+        </table>
     </div>
-
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</div>
 </body>
 </html>
