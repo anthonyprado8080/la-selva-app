@@ -12,32 +12,39 @@
         /* ESTILO DEL TICKET */
         .ticket { background-color: white; width: 320px; padding: 25px; box-shadow: 0 10px 20px rgba(0,0,0,0.1); color: #000; }
         .header { text-align: center; margin-bottom: 20px; border-bottom: 1px dashed #000; padding-bottom: 15px; }
-        .header h2 { margin: 0; font-size: 22px; text-transform: uppercase; }
-        .header p { margin: 5px 0 0 0; font-size: 14px; }
-        .info { font-size: 14px; margin-bottom: 15px; border-bottom: 1px dashed #000; padding-bottom: 15px; }
+        .header h2 { margin: 0; font-size: 20px; text-transform: uppercase; }
+        .header p { margin: 4px 0 0 0; font-size: 12px; }
+        .info { font-size: 13px; margin-bottom: 15px; border-bottom: 1px dashed #000; padding-bottom: 15px; }
         .info p { margin: 4px 0; display: flex; justify-content: space-between; }
-        .items { width: 100%; font-size: 14px; border-collapse: collapse; margin-bottom: 15px; }
+        .items { width: 100%; font-size: 13px; border-collapse: collapse; margin-bottom: 15px; }
         .items th, .items td { padding: 6px 0; }
         .items th { border-bottom: 1px solid #000; text-align: left; }
         .items .price { text-align: right; }
-        .totals { border-top: 1px dashed #000; padding-top: 15px; font-size: 18px; font-weight: bold; }
+        .totals { border-top: 1px dashed #000; padding-top: 15px; font-size: 16px; font-weight: bold; }
         .totals .row { display: flex; justify-content: space-between; margin-bottom: 5px;}
         .footer { text-align: center; margin-top: 25px; font-size: 12px; }
         
-        /* ESTILO DE LOS BOTONES NUEVOS */
+        /* ESTILO DE LOS BOTONES */
         .actions { margin-top: 30px; display: flex; flex-direction: column; gap: 15px; font-family: 'Poppins', sans-serif; width: 320px;}
         .btn { padding: 15px; border: none; cursor: pointer; font-weight: 600; border-radius: 8px; font-size: 1rem; text-decoration: none; color: white; text-align: center; display: flex; justify-content: center; align-items: center; gap: 10px; transition: 0.3s; box-sizing: border-box; width: 100%;}
+        
+        .btn-print { background-color: #2c3e50; }
+        .btn-print:hover { background-color: #1a252f; transform: translateY(-2px); }
         
         .btn-download { background-color: #f39c12; }
         .btn-download:hover { background-color: #e67e22; transform: translateY(-2px); }
         
-        .btn-whatsapp { background-color: #25D366; }
-        .btn-whatsapp:hover { background-color: #128C7E; transform: translateY(-2px); }
+        .btn-back { background-color: #1abc9c; }
+        .btn-back:hover { background-color: #16a085; }
         
-        .btn-back { background-color: #34495e; }
-        .btn-back:hover { background-color: #2c3e50; }
+        /* ESTILOS PARA CUANDO SE MANDA A IMPRESIÓN FÍSICA */
+        @media print {
+            body { background-color: white; margin: 0; padding: 0; }
+            .actions { display: none; } /* Oculta los botones en el papel */
+            .ticket { box-shadow: none; width: 100%; max-width: 300px; margin: 0; padding: 0; }
+        }
     </style>
-    <!-- Cargamos la librería que convierte el HTML en Imagen -->
+    <!-- Librería para descargar la imagen -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 </head>
 <body>
@@ -46,8 +53,8 @@
     <div class="ticket" id="boleta-ticket">
         <div class="header">
             <h2>La Selva del Prado</h2>
-            <p>RUC: 10123456789</p>
-            <p>Av. Principal 123, Pucallpa</p>
+            <p>RUC: 10433857009</p>
+            <p>Carretera Tingo María-Monzón, Centro Poblado Bella, Tingo María / Centro Poblado de Bella</p>
         </div>
 
         <div class="info">
@@ -89,42 +96,24 @@
         </div>
     </div>
 
-    <!-- NUEVOS BOTONES DE ACCIÓN -->
+    <!-- BOTONES DE ACCIÓN (Con impresión restaurada) -->
     <div class="actions">
-        <button class="btn btn-download" onclick="descargarBoleta()">⬇️ 1. Descargar Boleta (Imagen)</button>
-        <button class="btn btn-whatsapp" onclick="enviarWhatsApp()">💬 2. Enviar por WhatsApp</button>
-        <a href="/admin" class="btn btn-back">⬅ 3. Volver al Admin</a>
+        <button class="btn btn-print" onclick="window.print()">🖨️ Imprimir Boleta</button>
+        <button class="btn btn-download" onclick="descargarBoleta()">⬇️ Descargar (Imagen)</button>
+        <a href="/admin" class="btn btn-back">⬅ Volver al Admin</a>
     </div>
 
-    <!-- FUNCIONES MÁGICAS -->
+    <!-- FUNCIÓN PARA DESCARGAR LA IMAGEN -->
     <script>
-        // Función 1: Toma una "foto" del ticket y lo descarga
         function descargarBoleta() {
             const ticketElement = document.getElementById('boleta-ticket');
             
             html2canvas(ticketElement).then(canvas => {
                 const enlace = document.createElement('a');
-                // El nombre del archivo tendrá el número de mesa y ticket
                 enlace.download = `Boleta_Mesa{{ pedido.mesa_asignada.numero }}_Tck00{{ pedido.id }}.png`;
                 enlace.href = canvas.toDataURL('image/png');
                 enlace.click();
             });
-        }
-
-        // Función 2: Abre WhatsApp web/app para enviar un mensaje
-        function enviarWhatsApp() {
-            // Preguntamos el número de celular del cliente
-            const celular = prompt("Ingresa el número de WhatsApp del cliente (Ej: 999888777):");
-            
-            if (celular && celular.trim() !== "") {
-                // Preparamos un mensaje bonito
-                const mensaje = "🌿 *La Selva del Prado* 🌿%0A%0A¡Hola! Muchas gracias por visitarnos.%0AAquí te adjuntamos el comprobante de tu consumo en la *Mesa {{ pedido.mesa_asignada.numero }}*.%0A%0A¡Esperamos verte pronto!";
-                
-                // Redirigimos a WhatsApp
-                // IMPORTANTE: Recuerda adjuntar la imagen que descargaste en el paso 1
-                alert("Se abrirá WhatsApp. \n\nRecuerda ADJUNTAR la boleta que descargaste en el paso 1 antes de enviar el mensaje.");
-                window.open(`https://wa.me/51${celular}?text=${mensaje}`, '_blank');
-            }
         }
     </script>
 
