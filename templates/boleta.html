@@ -8,8 +8,6 @@
         @import url('https://fonts.googleapis.com/css2?family=Courier+Prime&family=Poppins:wght@400;600&display=swap');
         
         body { font-family: 'Courier Prime', monospace; background-color: #e0e0e0; display: flex; flex-direction: column; align-items: center; margin-top: 40px; padding-bottom: 40px;}
-        
-        /* ESTILO DEL TICKET */
         .ticket { background-color: white; width: 320px; padding: 25px; box-shadow: 0 10px 20px rgba(0,0,0,0.1); color: #000; }
         .header { text-align: center; margin-bottom: 20px; border-bottom: 1px dashed #000; padding-bottom: 15px; }
         .header h2 { margin: 0; font-size: 20px; text-transform: uppercase; }
@@ -24,32 +22,26 @@
         .totals .row { display: flex; justify-content: space-between; margin-bottom: 5px;}
         .footer { text-align: center; margin-top: 25px; font-size: 12px; }
         
-        /* ESTILO DE LOS BOTONES */
         .actions { margin-top: 30px; display: flex; flex-direction: column; gap: 15px; font-family: 'Poppins', sans-serif; width: 320px;}
         .btn { padding: 15px; border: none; cursor: pointer; font-weight: 600; border-radius: 8px; font-size: 1rem; text-decoration: none; color: white; text-align: center; display: flex; justify-content: center; align-items: center; gap: 10px; transition: 0.3s; box-sizing: border-box; width: 100%;}
         
         .btn-print { background-color: #2c3e50; }
         .btn-print:hover { background-color: #1a252f; transform: translateY(-2px); }
-        
         .btn-download { background-color: #f39c12; }
         .btn-download:hover { background-color: #e67e22; transform: translateY(-2px); }
-        
         .btn-back { background-color: #1abc9c; }
         .btn-back:hover { background-color: #16a085; }
         
-        /* ESTILOS PARA CUANDO SE MANDA A IMPRESIÓN FÍSICA */
         @media print {
             body { background-color: white; margin: 0; padding: 0; }
-            .actions { display: none; } /* Oculta los botones en el papel */
+            .actions { display: none; }
             .ticket { box-shadow: none; width: 100%; max-width: 300px; margin: 0; padding: 0; }
         }
     </style>
-    <!-- Librería para descargar la imagen -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 </head>
 <body>
 
-    <!-- EL TICKET VISUAL -->
     <div class="ticket" id="boleta-ticket">
         <div class="header">
             <h2>La Selva del Prado</h2>
@@ -85,9 +77,21 @@
 
         <div class="totals">
             <div class="row">
-                <span>TOTAL:</span>
+                <span>TOTAL A PAGAR:</span>
                 <span>S/ {{ "%.2f"|format(pedido.total) }}</span>
             </div>
+            
+            <!-- SI PAGAN CON EFECTIVO, MOSTRAR EL DETALLE DEL VUELTO -->
+            {% if pedido.metodo_pago == 'Efectivo' and pedido.monto_recibido > 0 %}
+            <div class="row" style="font-size: 13px; font-weight: normal; margin-top: 10px;">
+                <span>Efectivo recibido:</span>
+                <span>S/ {{ "%.2f"|format(pedido.monto_recibido) }}</span>
+            </div>
+            <div class="row" style="font-size: 14px; font-weight: normal;">
+                <span>VUELTO:</span>
+                <span>S/ {{ "%.2f"|format(pedido.vuelto) }}</span>
+            </div>
+            {% endif %}
         </div>
 
         <div class="footer">
@@ -96,14 +100,12 @@
         </div>
     </div>
 
-    <!-- BOTONES DE ACCIÓN (Con impresión restaurada) -->
     <div class="actions">
         <button class="btn btn-print" onclick="window.print()">🖨️ Imprimir Boleta</button>
         <button class="btn btn-download" onclick="descargarBoleta()">⬇️ Descargar (Imagen)</button>
         <a href="/admin" class="btn btn-back">⬅ Volver al Admin</a>
     </div>
 
-    <!-- FUNCIÓN PARA DESCARGAR LA IMAGEN -->
     <script>
         function descargarBoleta() {
             const ticketElement = document.getElementById('boleta-ticket');

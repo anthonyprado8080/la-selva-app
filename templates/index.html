@@ -20,7 +20,7 @@
         .card-desc { font-size: 0.85rem; color: #7f8c8d; margin-bottom: 10px; }
         .card-price { font-size: 1.2rem; font-weight: 700; color: #1abc9c; }
         .quantity-control { margin-top: 15px; display: flex; justify-content: space-between; align-items: center; }
-        .quantity-control input { width: 60px; padding: 8px; border: 1px solid #ddd; border-radius: 8px; text-align: center; font-weight: 600; font-family: 'Poppins'; }
+        .quantity-control input { width: 70px; padding: 8px; border: 1px solid #ddd; border-radius: 8px; text-align: center; font-weight: 600; font-family: 'Poppins'; }
         .sticky-footer { position: fixed; bottom: 0; left: 0; width: 100%; background: white; padding: 15px 0; box-shadow: 0 -5px 15px rgba(0,0,0,0.05); text-align: center; z-index: 1000; }
         .btn-enviar { background: #f39c12; color: white; border: none; padding: 15px 40px; font-size: 1.1rem; font-weight: 700; border-radius: 30px; cursor: pointer; box-shadow: 0 4px 15px rgba(243, 156, 18, 0.4); width: 90%; max-width: 400px; }
         .btn-enviar:hover { transform: translateY(-2px); background: #e67e22; }
@@ -45,12 +45,14 @@
                         </div>
                         <div class="quantity-control">
                             <span class="card-price">S/ {{ "%.2f"|format(comida.precio) }}</span>
-                            <input type="number" name="plato_{{ comida.id }}" value="0" min="0" max="20">
+                            <!-- AQUÍ AUMENTAMOS EL MÁXIMO A 200 -->
+                            <input type="number" name="plato_{{ comida.id }}" value="0" min="0" max="200">
                         </div>
                     </div>
                 </div>
                 {% endfor %}
             </div>
+            
             <h2>Bebidas Refrescantes</h2>
             <div class="grid">
                 {% for bebida in bebidas %}
@@ -63,12 +65,14 @@
                         </div>
                         <div class="quantity-control">
                             <span class="card-price">S/ {{ "%.2f"|format(bebida.precio) }}</span>
-                            <input type="number" name="plato_{{ bebida.id }}" value="0" min="0" max="20">
+                            <!-- AQUÍ TAMBIÉN AUMENTAMOS EL MÁXIMO A 200 -->
+                            <input type="number" name="plato_{{ bebida.id }}" value="0" min="0" max="200">
                         </div>
                     </div>
                 </div>
                 {% endfor %}
             </div>
+            
             <div class="sticky-footer">
                 <button type="submit" class="btn-enviar">Cocinar mi Pedido 👨‍🍳</button>
             </div>

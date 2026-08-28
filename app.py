@@ -41,6 +41,10 @@ class Pedido(db.Model):
     total = db.Column(db.Float, default=0.0)
     fecha_hora = db.Column(db.DateTime, default=datetime.utcnow)
     metodo_pago = db.Column(db.String(50), nullable=True)
+    # NUEVOS CAMPOS DE REGISTRO
+    monto_recibido = db.Column(db.Float, default=0.0)
+    vuelto = db.Column(db.Float, default=0.0)
+    
     detalles = db.relationship('DetallePedido', backref='pedido', lazy=True)
 
 class DetallePedido(db.Model):
@@ -65,8 +69,6 @@ def login_mesa():
         password = request.form.get('password')
         mesa = Mesa.query.filter_by(numero=numero_mesa).first()
         
-        # Si la contraseña es correcta, ingresan a la carta.
-        # No bloqueamos si hay pedido, para que la familia pueda pedir un juane extra.
         if mesa and check_password_hash(mesa.password_hash, password):
             session['mesa_id'] = mesa.id
             session['mesa_numero'] = mesa.numero
@@ -141,7 +143,6 @@ def logout():
 # ==========================================
 # 4. RUTAS DE ADMINISTRACIÓN
 # ==========================================
-# RESTAURAMOS EL LOGIN DE ADMINISTRADOR
 @app.route('/admin-login', methods=['GET', 'POST'])
 def admin_login():
     if request.method == 'POST':
@@ -176,6 +177,20 @@ def cobrar_pedido(pedido_id):
     if pedido:
         pedido.estado = 'Pagado'
         pedido.metodo_pago = request.form.get('metodo_pago', 'Efectivo')
+        
+        # PROCESAR EL VUELTO SI ES EFECTIVO
+        monto_recibido = request.form.get('monto_recibido')
+        if pedido.metodo_pago == 'Efectivo' and monto_recibido:
+            try:
+                pedido.monto_recibido = float(monto_recibido)
+                pedido.vuelto = pedido.monto_recibido - pedido.total
+            except ValueError:
+                pedido.monto_recibido = pedido.total
+                pedido.vuelto = 0.0
+        else:
+            pedido.monto_recibido = pedido.total
+            pedido.vuelto = 0.0
+            
         db.session.commit()
         return redirect(url_for('ver_boleta', pedido_id=pedido.id))
     return redirect(url_for('admin_dashboard'))

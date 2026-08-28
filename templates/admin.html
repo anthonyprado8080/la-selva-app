@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <title>Admin Dashboard</title>
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;800&display=swap');
         body { font-family: 'Poppins', sans-serif; margin: 0; padding: 20px; background-color: #f4f7f6; color: #2c3e50; }
         .container { max-width: 1200px; margin: 0 auto; background: white; padding: 30px; border-radius: 15px; box-shadow: 0 10px 30px rgba(0,0,0,0.05); }
         .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px; border-bottom: 2px solid #eee; padding-bottom: 20px; }
@@ -13,22 +13,30 @@
         .section { margin-bottom: 40px; padding: 20px; background: #ffffff; border: 1px solid #eee; border-radius: 12px; }
         h2 { color: #34495e; font-size: 1.5rem; margin-top: 0; }
         
+        /* Tablas */
         table { width: 100%; border-collapse: separate; border-spacing: 0; margin-top: 15px; }
         th { background-color: #1abc9c; color: white; padding: 15px; text-align: left; }
         th:first-child { border-top-left-radius: 10px; } th:last-child { border-top-right-radius: 10px; }
         td { padding: 15px; border-bottom: 1px solid #f0f0f0; vertical-align: top; }
         tr:hover td { background-color: #f9fdfc; }
         
+        /* Botones e Inputs */
         button { background-color: #1abc9c; color: white; border: none; padding: 10px 15px; cursor: pointer; border-radius: 8px; font-family: 'Poppins'; font-weight: 600; transition: all 0.3s; }
         button:hover { background-color: #16a085; transform: translateY(-2px); box-shadow: 0 5px 15px rgba(26, 188, 156, 0.3); }
         .btn-danger { background-color: #e74c3c; } .btn-danger:hover { background-color: #c0392b; }
         .btn-small { padding: 6px 10px; font-size: 0.8rem; background-color: #3498db; } .btn-small:hover { background-color: #2980b9; }
-        
-        input, select { padding: 10px; border: 1px solid #ddd; border-radius: 8px; font-family: 'Poppins'; outline: none; margin-right: 5px; margin-bottom: 5px; }
+        input, select { padding: 10px; border: 1px solid #ddd; border-radius: 8px; font-family: 'Poppins'; outline: none; margin-right: 5px; margin-bottom: 5px; box-sizing: border-box; }
         input:focus, select:focus { border-color: #1abc9c; }
+        
+        /* Extras */
         .pedido-detalle { margin: 10px 0 0 15px; color: #555; }
         .flash { background-color: #d4edda; color: #155724; padding: 15px; border-radius: 8px; border-left: 5px solid #28a745; margin-bottom: 20px;}
         .caja-total { font-size: 2rem; color: #27ae60; font-weight: bold; margin: 10px 0 20px 0; }
+        
+        /* ESTILOS PARA LA NUEVA VENTANA DE COBRO */
+        .ventana-cobro { border: 2px solid #1abc9c; background-color: #f0fbf9; padding: 25px; border-radius: 12px; box-shadow: 0 5px 20px rgba(26, 188, 156, 0.15); }
+        .ventana-cobro h2 { color: #16a085; font-weight: 800; font-size: 1.8rem; margin-bottom: 5px; }
+        .resumen-monto { display: flex; justify-content: space-between; align-items: center; background: white; padding: 15px; border-radius: 8px; margin-bottom: 15px; border: 1px dashed #1abc9c;}
     </style>
 </head>
 <body>
@@ -46,6 +54,59 @@
       {% endif %}
     {% endwith %}
 
+    <!-- ============================================== -->
+    <!-- NUEVA VENTANA DE COBRO (CAJA REGISTRADORA POS) -->
+    <!-- ============================================== -->
+    <div class="section ventana-cobro">
+        <h2>🧮 Ventana de Cobro Rápido</h2>
+        <p style="color: #7f8c8d; font-size: 0.95rem; margin-top: -5px; margin-bottom: 20px;">
+            Selecciona la mesa para calcular el vuelto automáticamente e imprimir su boleta.
+        </p>
+        
+        <form id="form_cobro_rapido" method="POST" action="">
+            <select id="mesa_select" onchange="actualizarTotalRápido()" required style="width: 100%; font-size: 1.1rem; padding: 15px; font-weight: bold;">
+                <option value="" disabled selected>-- Elige una mesa que haya terminado de comer --</option>
+                {% for mesa in mesas %}
+                    {% if mesa.pedidos %}
+                        {% set p = mesa.pedidos | selectattr("estado", "equalto", "Pendiente") | first %}
+                        {% if p %}
+                            <option value="{{ p.id }}" data-total="{{ p.total }}">Mesa {{ mesa.numero }} (S/ {{ "%.2f"|format(p.total) }})</option>
+                        {% endif %}
+                    {% endif %}
+                {% endfor %}
+            </select>
+            
+            <!-- Esta sección está oculta hasta que eliges una mesa -->
+            <div id="info_cobro" style="display:none; margin-top: 20px;">
+                <div class="resumen-monto">
+                    <span style="font-size: 1.3rem; font-weight: 600; color: #2c3e50;">Total a Cobrar:</span>
+                    <span style="font-size: 2rem; font-weight: 800; color: #27ae60;">S/ <span id="total_rapido">0.00</span></span>
+                </div>
+                
+                <select name="metodo_pago" id="metodo_pago_rapido" onchange="toggleMontoRapido()" required style="width: 100%; padding: 15px; font-size: 1.1rem; margin-bottom: 15px;">
+                    <option value="Efectivo">💵 Pago en Efectivo (Calcular Vuelto)</option>
+                    <option value="Yape/Plin">📱 Yape / Plin (Monto exacto)</option>
+                    <option value="Tarjeta">💳 Tarjeta (Monto exacto)</option>
+                </select>
+                
+                <div id="caja_efectivo_rapido" style="background: white; padding: 15px; border-radius: 8px; margin-bottom: 15px; text-align: center;">
+                    <label style="display: block; color: #34495e; font-weight: bold; margin-bottom: 10px; font-size: 1.1rem;">¿Con cuánto dinero te paga el cliente?</label>
+                    <input type="number" step="0.10" name="monto_recibido" id="monto_recibido_rapido" placeholder="Ej: 50.00" style="width: 100%; max-width: 300px; text-align: center; font-size: 1.5rem; padding: 10px; border: 2px solid #bdc3c7;" oninput="calcularVueltoRapido()">
+                    
+                    <div style="margin-top: 15px;">
+                        <span style="font-size: 1.2rem; color: #7f8c8d;">Vuelto a entregar:</span><br>
+                        <span id="vuelto_rapido" style="font-size: 2.5rem; font-weight: 800; color: #e74c3c;">S/ 0.00</span>
+                    </div>
+                </div>
+                
+                <button type="submit" style="width: 100%; padding: 15px; font-size: 1.2rem; background-color: #27ae60;">✅ Confirmar Cobro e Imprimir Boleta</button>
+            </div>
+        </form>
+    </div>
+
+    <!-- ============================================== -->
+    <!-- RESTO DE LAS FUNCIONES DEL ADMINISTRADOR       -->
+    <!-- ============================================== -->
     <div class="section">
         <h2>💰 Caja del Día</h2>
         <div class="caja-total">S/ {{ "%.2f"|format(ganancias) }}</div>
@@ -55,7 +116,7 @@
     </div>
 
     <div class="section">
-        <h2>🪑 Gestión de Mesas y Pedidos</h2>
+        <h2>🪑 Gestión de Mesas y Detalles</h2>
         <form action="/admin/mesa/agregar" method="POST" style="margin-bottom: 15px;">
             <input type="number" name="numero" placeholder="N° Mesa" required style="width: 100px;">
             <input type="text" name="password" placeholder="Contraseña" required>
@@ -65,7 +126,7 @@
             <tr>
                 <th>Mesa</th>
                 <th>Detalle del Pedido</th>
-                <th>Total / Cobro</th>
+                <th>Estado</th>
                 <th>Opciones de Mesa</th>
             </tr>
             {% for mesa in mesas %}
@@ -75,7 +136,7 @@
                     {% if mesa.pedidos %}
                         {% set pedido_pendiente = mesa.pedidos | selectattr("estado", "equalto", "Pendiente") | first %}
                         {% if pedido_pendiente %}
-                            <span style="color: #f39c12; font-weight: bold;">🔴 Cocinando / Comiendo</span>
+                            <span style="color: #f39c12; font-weight: bold;">🔴 Comiendo</span>
                             <ul class="pedido-detalle">
                             {% for detalle in pedido_pendiente.detalles %}
                                 <li>{{ detalle.cantidad }}x {{ detalle.plato.nombre }}</li>
@@ -90,21 +151,13 @@
                 </td>
                 <td>
                     {% if mesa.pedidos and pedido_pendiente %}
-                        <strong style="color: #27ae60; font-size: 1.1rem;">S/ {{ "%.2f"|format(pedido_pendiente.total) }}</strong>
-                        <form action="/admin/cobrar/{{ pedido_pendiente.id }}" method="POST" style="margin-top: 10px;">
-                            <select name="metodo_pago" required>
-                                <option value="Efectivo">Efectivo</option>
-                                <option value="Yape/Plin">Yape / Plin</option>
-                                <option value="Tarjeta">Tarjeta</option>
-                            </select>
-                            <button type="submit" style="width: 100%; margin-top:5px;">Cobrar y Boleta</button>
-                        </form>
+                        <strong style="color: #27ae60; font-size: 1.1rem;">Por Pagar: S/ {{ "%.2f"|format(pedido_pendiente.total) }}</strong><br>
+                        <small style="color: gray;">Usa la ventana de arriba para cobrar</small>
                     {% else %}
-                        S/ 0.00
+                        -
                     {% endif %}
                 </td>
                 <td>
-                    <!-- AQUÍ ESTÁ EL CAMBIO DE CLAVE RESTAURADO -->
                     <form action="/admin/mesa/cambiar-clave/{{ mesa.id }}" method="POST">
                         <input type="text" name="nueva_clave" placeholder="Nueva clave" required style="width: 100px;">
                         <button type="submit" class="btn-small">Cambiar Clave</button>
@@ -119,7 +172,6 @@
         <h2>🍔 Tu Carta</h2>
         <form action="/admin/plato/agregar" method="POST" style="margin-bottom: 15px;">
             <input type="text" name="nombre" placeholder="Nombre" required>
-            <!-- AQUÍ ESTÁ LA DESCRIPCIÓN RESTAURADA -->
             <input type="text" name="descripcion" placeholder="Descripción del plato"> 
             <input type="number" step="0.1" name="precio" placeholder="S/ Precio" required style="width: 90px;">
             <select name="categoria">
@@ -154,5 +206,75 @@
         </table>
     </div>
 </div>
+
+<!-- ============================================== -->
+<!-- JAVASCRIPT PARA LA CALCULADORA DE VUELTO       -->
+<!-- ============================================== -->
+<script>
+    function actualizarTotalRápido() {
+        const select = document.getElementById('mesa_select');
+        const info = document.getElementById('info_cobro');
+        const form = document.getElementById('form_cobro_rapido');
+        const totalSpan = document.getElementById('total_rapido');
+        
+        if (select.value) {
+            // Sacar el total de la mesa seleccionada
+            const selectedOption = select.options[select.selectedIndex];
+            const total = selectedOption.getAttribute('data-total');
+            
+            // Mostrar en pantalla
+            totalSpan.innerText = parseFloat(total).toFixed(2);
+            
+            // Enlazar el formulario al ID del pedido
+            form.action = '/admin/cobrar/' + select.value;
+            
+            // Hacer visible la calculadora
+            info.style.display = 'block';
+            
+            // Limpiar valores anteriores
+            document.getElementById('monto_recibido_rapido').value = '';
+            document.getElementById('vuelto_rapido').innerText = 'S/ 0.00';
+            document.getElementById('vuelto_rapido').style.color = '#e74c3c';
+            
+            // Revisar qué método de pago está marcado
+            toggleMontoRapido();
+        }
+    }
+
+    function toggleMontoRapido() {
+        const metodo = document.getElementById('metodo_pago_rapido').value;
+        const cajaEfectivo = document.getElementById('caja_efectivo_rapido');
+        if(metodo === 'Efectivo') {
+            cajaEfectivo.style.display = 'block';
+        } else {
+            cajaEfectivo.style.display = 'none';
+        }
+    }
+
+    function calcularVueltoRapido() {
+        const select = document.getElementById('mesa_select');
+        const selectedOption = select.options[select.selectedIndex];
+        const total = parseFloat(selectedOption.getAttribute('data-total'));
+        
+        const inputMonto = document.getElementById('monto_recibido_rapido').value;
+        const spanVuelto = document.getElementById('vuelto_rapido');
+        
+        if (!inputMonto) {
+            spanVuelto.innerText = 'S/ 0.00';
+            spanVuelto.style.color = '#e74c3c';
+            return;
+        }
+
+        const monto = parseFloat(inputMonto);
+        if (monto < total) {
+            spanVuelto.innerText = 'Falta dinero';
+            spanVuelto.style.color = '#e74c3c';
+        } else {
+            const vuelto = monto - total;
+            spanVuelto.innerText = 'S/ ' + vuelto.toFixed(2);
+            spanVuelto.style.color = '#27ae60'; // Verde cuando es correcto
+        }
+    }
+</script>
 </body>
 </html>
