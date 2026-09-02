@@ -2,6 +2,7 @@ from flask import Flask, render_template, request, redirect, url_for, session, f
 from flask_sqlalchemy import SQLAlchemy
 from werkzeug.security import generate_password_hash, check_password_hash
 import os
+import base64  # NUEVA HERRAMIENTA PARA NO USAR CARPETAS
 from datetime import datetime
 
 # ==========================================
@@ -31,7 +32,8 @@ class Plato(db.Model):
     descripcion = db.Column(db.Text, nullable=True)
     precio = db.Column(db.Float, nullable=False)
     categoria = db.Column(db.String(50), nullable=False)
-    imagen = db.Column(db.String(300), default='https://images.unsplash.com/photo-1546069901-ba9599a7e63c?auto=format&fit=crop&w=300&q=80')
+    # CAMBIO IMPORTANTE: db.Text para poder guardar fotos grandes como texto
+    imagen = db.Column(db.Text, default='https://images.unsplash.com/photo-1546069901-ba9599a7e63c?auto=format&fit=crop&w=300&q=80')
     disponible = db.Column(db.Boolean, default=True)
 
 class Pedido(db.Model):
@@ -41,10 +43,8 @@ class Pedido(db.Model):
     total = db.Column(db.Float, default=0.0)
     fecha_hora = db.Column(db.DateTime, default=datetime.utcnow)
     metodo_pago = db.Column(db.String(50), nullable=True)
-    # NUEVOS CAMPOS DE REGISTRO
     monto_recibido = db.Column(db.Float, default=0.0)
     vuelto = db.Column(db.Float, default=0.0)
-    
     detalles = db.relationship('DetallePedido', backref='pedido', lazy=True)
 
 class DetallePedido(db.Model):
@@ -162,7 +162,6 @@ def admin_dashboard():
         
     todas_mesas = Mesa.query.order_by(Mesa.numero).all()
     todos_platos = Plato.query.all()
-    
     pedidos_pagados = Pedido.query.filter_by(estado='Pagado').all()
     ganancias_hoy = sum(pedido.total for pedido in pedidos_pagados)
     
@@ -178,7 +177,6 @@ def cobrar_pedido(pedido_id):
         pedido.estado = 'Pagado'
         pedido.metodo_pago = request.form.get('metodo_pago', 'Efectivo')
         
-        # PROCESAR EL VUELTO SI ES EFECTIVO
         monto_recibido = request.form.get('monto_recibido')
         if pedido.metodo_pago == 'Efectivo' and monto_recibido:
             try:
@@ -210,7 +208,6 @@ def limpiar_caja():
     pedidos_pagados = Pedido.query.filter_by(estado='Pagado').all()
     for p in pedidos_pagados:
         p.estado = 'Archivado'
-    
     db.session.commit()
     flash('Caja reiniciada a S/ 0.00.', 'success')
     return redirect(url_for('admin_dashboard'))
@@ -219,18 +216,14 @@ def limpiar_caja():
 def agregar_mesa():
     if not session.get('admin_logged_in'):
         return redirect(url_for('admin_login'))
-    
     numero = request.form.get('numero')
     password_personalizada = request.form.get('password')
-    
     mesa_existente = Mesa.query.filter_by(numero=numero).first()
     if mesa_existente:
         flash(f'La mesa {numero} ya existe.', 'error')
         return redirect(url_for('admin_dashboard'))
-        
     password_mesa = generate_password_hash(password_personalizada)
     nueva_mesa = Mesa(numero=numero, password_hash=password_mesa)
-    
     db.session.add(nueva_mesa)
     db.session.commit()
     return redirect(url_for('admin_dashboard'))
@@ -239,17 +232,17 @@ def agregar_mesa():
 def cambiar_clave_mesa(id):
     if not session.get('admin_logged_in'):
         return redirect(url_for('admin_login'))
-        
     mesa = Mesa.query.get(id)
     nueva_clave = request.form.get('nueva_clave')
-    
     if mesa and nueva_clave:
         mesa.password_hash = generate_password_hash(nueva_clave)
         db.session.commit()
         flash(f'Clave de la Mesa {mesa.numero} actualizada.', 'success')
-        
     return redirect(url_for('admin_dashboard'))
 
+# ==========================================
+# RUTAS ACTUALIZADAS PARA GUARDAR FOTOS SIN CARPETAS
+# ==========================================
 @app.route('/admin/plato/agregar', methods=['POST'])
 def agregar_plato():
     if not session.get('admin_logged_in'):
@@ -259,12 +252,17 @@ def agregar_plato():
     descripcion = request.form.get('descripcion') 
     precio = float(request.form.get('precio', 0))
     categoria = request.form.get('categoria')
-    imagen = request.form.get('imagen', '').strip()
     
-    if not imagen:
-        imagen = 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?auto=format&fit=crop&w=300&q=80'
+    imagen_file = request.files.get('imagen')
+    # Imagen por defecto si no suben nada
+    imagen_data = 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?auto=format&fit=crop&w=300&q=80' 
     
-    nuevo_plato = Plato(nombre=nombre, descripcion=descripcion, precio=precio, categoria=categoria, imagen=imagen)
+    # ¡LA MAGIA OCURRE AQUÍ! Convirtiendo la foto en código Base64
+    if imagen_file and imagen_file.filename != '':
+        encoded_string = base64.b64encode(imagen_file.read()).decode('utf-8')
+        imagen_data = f"data:{imagen_file.content_type};base64,{encoded_string}"
+    
+    nuevo_plato = Plato(nombre=nombre, descripcion=descripcion, precio=precio, categoria=categoria, imagen=imagen_data)
     db.session.add(nuevo_plato)
     db.session.commit()
     return redirect(url_for('admin_dashboard'))
@@ -273,7 +271,6 @@ def agregar_plato():
 def toggle_plato(id):
     if not session.get('admin_logged_in'):
         return redirect(url_for('admin_login'))
-        
     plato = Plato.query.get(id)
     if plato:
         plato.disponible = not plato.disponible
@@ -284,7 +281,6 @@ def toggle_plato(id):
 def eliminar_plato(id):
     if not session.get('admin_logged_in'):
         return redirect(url_for('admin_login'))
-        
     plato = Plato.query.get(id)
     if plato:
         db.session.delete(plato)

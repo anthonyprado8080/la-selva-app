@@ -13,14 +13,12 @@
         .section { margin-bottom: 40px; padding: 20px; background: #ffffff; border: 1px solid #eee; border-radius: 12px; }
         h2 { color: #34495e; font-size: 1.5rem; margin-top: 0; }
         
-        /* Tablas */
         table { width: 100%; border-collapse: separate; border-spacing: 0; margin-top: 15px; }
         th { background-color: #1abc9c; color: white; padding: 15px; text-align: left; }
         th:first-child { border-top-left-radius: 10px; } th:last-child { border-top-right-radius: 10px; }
         td { padding: 15px; border-bottom: 1px solid #f0f0f0; vertical-align: top; }
         tr:hover td { background-color: #f9fdfc; }
         
-        /* Botones e Inputs */
         button { background-color: #1abc9c; color: white; border: none; padding: 10px 15px; cursor: pointer; border-radius: 8px; font-family: 'Poppins'; font-weight: 600; transition: all 0.3s; }
         button:hover { background-color: #16a085; transform: translateY(-2px); box-shadow: 0 5px 15px rgba(26, 188, 156, 0.3); }
         .btn-danger { background-color: #e74c3c; } .btn-danger:hover { background-color: #c0392b; }
@@ -28,15 +26,16 @@
         input, select { padding: 10px; border: 1px solid #ddd; border-radius: 8px; font-family: 'Poppins'; outline: none; margin-right: 5px; margin-bottom: 5px; box-sizing: border-box; }
         input:focus, select:focus { border-color: #1abc9c; }
         
-        /* Extras */
         .pedido-detalle { margin: 10px 0 0 15px; color: #555; }
         .flash { background-color: #d4edda; color: #155724; padding: 15px; border-radius: 8px; border-left: 5px solid #28a745; margin-bottom: 20px;}
         .caja-total { font-size: 2rem; color: #27ae60; font-weight: bold; margin: 10px 0 20px 0; }
         
-        /* ESTILOS PARA LA NUEVA VENTANA DE COBRO */
         .ventana-cobro { border: 2px solid #1abc9c; background-color: #f0fbf9; padding: 25px; border-radius: 12px; box-shadow: 0 5px 20px rgba(26, 188, 156, 0.15); }
         .ventana-cobro h2 { color: #16a085; font-weight: 800; font-size: 1.8rem; margin-bottom: 5px; }
         .resumen-monto { display: flex; justify-content: space-between; align-items: center; background: white; padding: 15px; border-radius: 8px; margin-bottom: 15px; border: 1px dashed #1abc9c;}
+        
+        /* Estilo para el botón de subir foto */
+        .input-file { border: 1px dashed #1abc9c; background: #f9fdfc; cursor: pointer; padding: 8px; width: 100%; max-width: 250px; }
     </style>
 </head>
 <body>
@@ -54,9 +53,6 @@
       {% endif %}
     {% endwith %}
 
-    <!-- ============================================== -->
-    <!-- NUEVA VENTANA DE COBRO (CAJA REGISTRADORA POS) -->
-    <!-- ============================================== -->
     <div class="section ventana-cobro">
         <h2>🧮 Ventana de Cobro Rápido</h2>
         <p style="color: #7f8c8d; font-size: 0.95rem; margin-top: -5px; margin-bottom: 20px;">
@@ -76,7 +72,6 @@
                 {% endfor %}
             </select>
             
-            <!-- Esta sección está oculta hasta que eliges una mesa -->
             <div id="info_cobro" style="display:none; margin-top: 20px;">
                 <div class="resumen-monto">
                     <span style="font-size: 1.3rem; font-weight: 600; color: #2c3e50;">Total a Cobrar:</span>
@@ -104,9 +99,6 @@
         </form>
     </div>
 
-    <!-- ============================================== -->
-    <!-- RESTO DE LAS FUNCIONES DEL ADMINISTRADOR       -->
-    <!-- ============================================== -->
     <div class="section">
         <h2>💰 Caja del Día</h2>
         <div class="caja-total">S/ {{ "%.2f"|format(ganancias) }}</div>
@@ -170,16 +162,21 @@
 
     <div class="section">
         <h2>🍔 Tu Carta</h2>
-        <form action="/admin/plato/agregar" method="POST" style="margin-bottom: 15px;">
-            <input type="text" name="nombre" placeholder="Nombre" required>
-            <input type="text" name="descripcion" placeholder="Descripción del plato"> 
-            <input type="number" step="0.1" name="precio" placeholder="S/ Precio" required style="width: 90px;">
+        <!-- AQUÍ ESTÁ EL CAMBIO: Formulario adaptado para archivos (multipart/form-data) -->
+        <form action="/admin/plato/agregar" method="POST" enctype="multipart/form-data" style="margin-bottom: 15px; display: flex; flex-wrap: wrap; gap: 10px; align-items: center;">
+            <input type="text" name="nombre" placeholder="Nombre del plato" required>
+            <input type="text" name="descripcion" placeholder="Descripción breve"> 
+            <input type="number" step="0.1" name="precio" placeholder="S/ Precio" required style="width: 100px;">
             <select name="categoria">
                 <option value="Comida">Comida</option><option value="Bebida">Bebida</option>
             </select>
-            <input type="text" name="imagen" placeholder="URL de imagen (opcional)">
-            <button type="submit">Agregar Plato</button>
+            
+            <!-- EL BOTÓN PARA ELEGIR LA FOTO DE TU LAPTOP -->
+            <input type="file" name="imagen" accept="image/*" class="input-file" required>
+            
+            <button type="submit">Guardar Plato</button>
         </form>
+
         <table>
             <tr>
                 <th>Plato</th>
@@ -190,7 +187,10 @@
             </tr>
             {% for plato in platos %}
             <tr>
-                <td><strong>{{ plato.nombre }}</strong><br><small style="color: gray;">{{ plato.descripcion }}</small></td>
+                <td>
+                    <strong>{{ plato.nombre }}</strong><br>
+                    <small style="color: gray;">{{ plato.descripcion }}</small>
+                </td>
                 <td>{{ plato.categoria }}</td>
                 <td>S/ {{ "%.2f"|format(plato.precio) }}</td>
                 <td>
@@ -207,9 +207,6 @@
     </div>
 </div>
 
-<!-- ============================================== -->
-<!-- JAVASCRIPT PARA LA CALCULADORA DE VUELTO       -->
-<!-- ============================================== -->
 <script>
     function actualizarTotalRápido() {
         const select = document.getElementById('mesa_select');
@@ -218,25 +215,14 @@
         const totalSpan = document.getElementById('total_rapido');
         
         if (select.value) {
-            // Sacar el total de la mesa seleccionada
             const selectedOption = select.options[select.selectedIndex];
             const total = selectedOption.getAttribute('data-total');
-            
-            // Mostrar en pantalla
             totalSpan.innerText = parseFloat(total).toFixed(2);
-            
-            // Enlazar el formulario al ID del pedido
             form.action = '/admin/cobrar/' + select.value;
-            
-            // Hacer visible la calculadora
             info.style.display = 'block';
-            
-            // Limpiar valores anteriores
             document.getElementById('monto_recibido_rapido').value = '';
             document.getElementById('vuelto_rapido').innerText = 'S/ 0.00';
             document.getElementById('vuelto_rapido').style.color = '#e74c3c';
-            
-            // Revisar qué método de pago está marcado
             toggleMontoRapido();
         }
     }
@@ -272,7 +258,7 @@
         } else {
             const vuelto = monto - total;
             spanVuelto.innerText = 'S/ ' + vuelto.toFixed(2);
-            spanVuelto.style.color = '#27ae60'; // Verde cuando es correcto
+            spanVuelto.style.color = '#27ae60';
         }
     }
 </script>
