@@ -1,9 +1,10 @@
 from flask import Flask, render_template, request, redirect, url_for, session, flash
 from flask_sqlalchemy import SQLAlchemy
 from werkzeug.security import generate_password_hash, check_password_hash
+from werkzeug.utils import secure_filename
 import os
-import base64  # NUEVA HERRAMIENTA PARA NO USAR CARPETAS
-from datetime import datetime
+import uuid
+from datetime import datetime, timedelta
 
 # ==========================================
 # 1. CONFIGURACIÓN INICIAL
@@ -15,7 +16,13 @@ basedir = os.path.abspath(os.path.dirname(__file__))
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///' + os.path.join(basedir, 'instance', 'database.db')
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
+# CARPETA PARA GUARDAR LAS FOTOS (Carga rápida)
+app.config['UPLOAD_FOLDER'] = os.path.join(basedir, 'static', 'uploads')
+
 db = SQLAlchemy(app)
+
+def obtener_hora_peru():
+    return datetime.utcnow() - timedelta(hours=5)
 
 # ==========================================
 # 2. MODELOS DE BASE DE DATOS
@@ -32,8 +39,7 @@ class Plato(db.Model):
     descripcion = db.Column(db.Text, nullable=True)
     precio = db.Column(db.Float, nullable=False)
     categoria = db.Column(db.String(50), nullable=False)
-    # CAMBIO IMPORTANTE: db.Text para poder guardar fotos grandes como texto
-    imagen = db.Column(db.Text, default='https://images.unsplash.com/photo-1546069901-ba9599a7e63c?auto=format&fit=crop&w=300&q=80')
+    imagen = db.Column(db.String(300), default='https://images.unsplash.com/photo-1546069901-ba9599a7e63c?auto=format&fit=crop&w=300&q=80')
     disponible = db.Column(db.Boolean, default=True)
 
 class Pedido(db.Model):
@@ -41,7 +47,7 @@ class Pedido(db.Model):
     mesa_id = db.Column(db.Integer, db.ForeignKey('mesa.id'), nullable=False)
     estado = db.Column(db.String(50), default='Pendiente')
     total = db.Column(db.Float, default=0.0)
-    fecha_hora = db.Column(db.DateTime, default=datetime.utcnow)
+    fecha_hora = db.Column(db.DateTime, default=obtener_hora_peru)
     metodo_pago = db.Column(db.String(50), nullable=True)
     monto_recibido = db.Column(db.Float, default=0.0)
     vuelto = db.Column(db.Float, default=0.0)
@@ -53,6 +59,7 @@ class DetallePedido(db.Model):
     plato_id = db.Column(db.Integer, db.ForeignKey('plato.id'), nullable=False)
     cantidad = db.Column(db.Integer, nullable=False)
     precio_unitario = db.Column(db.Float, nullable=False)
+    hora_pedido = db.Column(db.DateTime, default=obtener_hora_peru)
     plato = db.relationship('Plato')
 
 # ==========================================
@@ -240,9 +247,6 @@ def cambiar_clave_mesa(id):
         flash(f'Clave de la Mesa {mesa.numero} actualizada.', 'success')
     return redirect(url_for('admin_dashboard'))
 
-# ==========================================
-# RUTAS ACTUALIZADAS PARA GUARDAR FOTOS SIN CARPETAS
-# ==========================================
 @app.route('/admin/plato/agregar', methods=['POST'])
 def agregar_plato():
     if not session.get('admin_logged_in'):
@@ -254,15 +258,16 @@ def agregar_plato():
     categoria = request.form.get('categoria')
     
     imagen_file = request.files.get('imagen')
-    # Imagen por defecto si no suben nada
-    imagen_data = 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?auto=format&fit=crop&w=300&q=80' 
+    nombre_imagen = 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?auto=format&fit=crop&w=300&q=80' 
     
-    # ¡LA MAGIA OCURRE AQUÍ! Convirtiendo la foto en código Base64
+    # GUARDAR LA FOTO EN LA CARPETA STATIC/UPLOADS
     if imagen_file and imagen_file.filename != '':
-        encoded_string = base64.b64encode(imagen_file.read()).decode('utf-8')
-        imagen_data = f"data:{imagen_file.content_type};base64,{encoded_string}"
+        filename = secure_filename(imagen_file.filename)
+        unique_filename = str(uuid.uuid4().hex)[:8] + "_" + filename
+        imagen_file.save(os.path.join(app.config['UPLOAD_FOLDER'], unique_filename))
+        nombre_imagen = unique_filename
     
-    nuevo_plato = Plato(nombre=nombre, descripcion=descripcion, precio=precio, categoria=categoria, imagen=imagen_data)
+    nuevo_plato = Plato(nombre=nombre, descripcion=descripcion, precio=precio, categoria=categoria, imagen=nombre_imagen)
     db.session.add(nuevo_plato)
     db.session.commit()
     return redirect(url_for('admin_dashboard'))
@@ -299,6 +304,10 @@ with app.app_context():
     instance_path = os.path.join(basedir, 'instance')
     if not os.path.exists(instance_path):
         os.makedirs(instance_path)
+    
+    if not os.path.exists(app.config['UPLOAD_FOLDER']):
+        os.makedirs(app.config['UPLOAD_FOLDER'])
+        
     db.create_all()
 
 if __name__ == '__main__':

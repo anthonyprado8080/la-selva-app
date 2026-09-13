@@ -3,23 +3,28 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Pedido Recibido</title>
+    <title>¡Pedido Confirmado!</title>
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;800&display=swap');
-        body { margin: 0; font-family: 'Poppins', sans-serif; background-color: #e8f8f5; display: flex; justify-content: center; align-items: center; height: 100vh; text-align: center; }
-        .card { background: white; padding: 40px; border-radius: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.05); max-width: 90%; }
-        h1 { color: #1abc9c; font-size: 3rem; margin: 0 0 10px 0; }
-        h2 { color: #2c3e50; }
-        p { color: #7f8c8d; margin-bottom: 30px; }
-        .btn { background-color: #1abc9c; color: white; padding: 15px 30px; text-decoration: none; border-radius: 10px; font-weight: 600; box-shadow: 0 4px 15px rgba(26, 188, 156, 0.3); }
+        @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap');
+        body { margin: 0; font-family: 'Poppins', sans-serif; background-color: #f8f9fa; display: flex; justify-content: center; align-items: center; height: 100vh; text-align: center; }
+        .card { background: white; padding: 40px; border-radius: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.1); max-width: 400px; width: 90%; }
+        h1 { color: #27ae60; margin-bottom: 10px; font-size: 2rem; }
+        p { color: #7f8c8d; font-size: 1.1rem; margin-bottom: 30px; }
+        .btn { display: inline-block; background: #1abc9c; color: white; text-decoration: none; padding: 15px 30px; border-radius: 30px; font-weight: bold; font-size: 1.1rem; transition: 0.3s; width: 80%; margin-bottom: 15px; }
+        .btn:hover { background: #16a085; transform: translateY(-2px); box-shadow: 0 5px 15px rgba(26, 188, 156, 0.3); }
+        .btn-outline { background: transparent; border: 2px solid #e74c3c; color: #e74c3c; }
+        .btn-outline:hover { background: #e74c3c; color: white; box-shadow: 0 5px 15px rgba(231, 76, 60, 0.3); }
     </style>
 </head>
 <body>
     <div class="card">
-        <h1>✅</h1>
-        <h2>¡Pedido Enviado a Cocina!</h2>
-        <p>Mesa {{ mesa_numero }}, en breve le llevaremos su orden.</p>
-        <a href="/carta" class="btn">Pedir algo más</a>
+        <div style="font-size: 4rem; margin-bottom: 10px;">👨‍🍳</div>
+        <h1>¡Pedido en Marcha!</h1>
+        <p>Tu orden de la <strong>Mesa {{ mesa_numero }}</strong> ya está en cocina. En breve te estaremos atendiendo.</p>
+        
+        <a href="/carta" class="btn">Pedir algo más (Bebidas, Postres)</a>
+        <br>
+        <a href="/logout" class="btn btn-outline">Cerrar Sesión de la Mesa</a>
     </div>
 </body>
 </html>

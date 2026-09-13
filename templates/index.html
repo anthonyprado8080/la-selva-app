@@ -15,7 +15,6 @@
         
         .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 20px; margin-top: 20px; }
         
-        /* TARJETAS CLICKABLES */
         .card { background: white; border-radius: 15px; overflow: hidden; box-shadow: 0 5px 15px rgba(0,0,0,0.05); display: flex; flex-direction: column; cursor: pointer; transition: transform 0.2s; position: relative; }
         .card:hover { transform: translateY(-5px); box-shadow: 0 8px 25px rgba(0,0,0,0.1); }
         .card img { width: 100%; height: 160px; object-fit: cover; }
@@ -23,10 +22,8 @@
         .card-title { font-size: 1.1rem; font-weight: 700; color: #2c3e50; margin: 0 0 5px 0; }
         .card-price { font-size: 1.2rem; font-weight: 700; color: #1abc9c; display: block; margin-top: 10px; }
         
-        /* INDICADOR DE CANTIDAD SELECCIONADA */
         .badge { position: absolute; top: 10px; right: 10px; background: #e74c3c; color: white; font-weight: bold; font-size: 1.2rem; padding: 5px 15px; border-radius: 20px; display: none; box-shadow: 0 4px 10px rgba(0,0,0,0.2); }
         
-        /* ESTILOS DEL MODAL (VENTANA EMERGENTE) */
         .modal { display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.6); backdrop-filter: blur(5px); justify-content: center; align-items: center; }
         .modal-content { background: white; border-radius: 20px; padding: 20px; width: 90%; max-width: 400px; text-align: center; position: relative; animation: slideIn 0.3s ease-out; }
         @keyframes slideIn { from { transform: translateY(50px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
@@ -36,7 +33,6 @@
         .modal-price { font-size: 1.5rem; color: #1abc9c; font-weight: bold; margin-bottom: 20px; }
         .close { position: absolute; top: 15px; right: 15px; font-size: 1.8rem; font-weight: bold; color: white; background: rgba(0,0,0,0.5); border-radius: 50%; width: 35px; height: 35px; line-height: 35px; cursor: pointer; }
         
-        /* CONTROL DE CANTIDAD EN EL MODAL */
         .qty-controls { display: flex; justify-content: center; align-items: center; gap: 15px; margin-bottom: 20px; }
         .btn-qty { background: #f0f0f0; border: none; font-size: 1.5rem; width: 40px; height: 40px; border-radius: 10px; cursor: pointer; font-weight: bold; color: #2c3e50; transition: 0.2s; }
         .btn-qty:hover { background: #e0e0e0; }
@@ -56,13 +52,12 @@
     </div>
     
     <div class="container">
-        <!-- FORMULARIO PRINCIPAL QUE ENVÍA TODO JUNTO -->
         <form action="/enviar-pedido" method="POST" id="form-pedidos">
             
             <h2>Comidas Principales</h2>
             <div class="grid">
                 {% for comida in comidas %}
-                <!-- INPUT OCULTO QUE GUARDA LA CANTIDAD -->
+                {% set img_url = url_for('static', filename='uploads/' + comida.imagen) if not comida.imagen.startswith('http') else comida.imagen %}
                 <input type="hidden" name="plato_{{ comida.id }}" id="input_{{ comida.id }}" value="0">
                 
                 <div class="card" 
@@ -70,10 +65,10 @@
                      data-nombre="{{ comida.nombre }}" 
                      data-desc="{{ comida.descripcion }}" 
                      data-precio="{{ comida.precio }}" 
-                     data-img="{{ comida.imagen }}"
+                     data-img="{{ img_url }}"
                      onclick="abrirModal(this)">
                     <span class="badge" id="badge_{{ comida.id }}">0</span>
-                    <img src="{{ comida.imagen }}" alt="{{ comida.nombre }}">
+                    <img src="{{ img_url }}" alt="{{ comida.nombre }}">
                     <div class="card-body">
                         <h4 class="card-title">{{ comida.nombre }}</h4>
                         <span class="card-price">S/ {{ "%.2f"|format(comida.precio) }}</span>
@@ -85,6 +80,7 @@
             <h2>Bebidas Refrescantes</h2>
             <div class="grid">
                 {% for bebida in bebidas %}
+                {% set img_url = url_for('static', filename='uploads/' + bebida.imagen) if not bebida.imagen.startswith('http') else bebida.imagen %}
                 <input type="hidden" name="plato_{{ bebida.id }}" id="input_{{ bebida.id }}" value="0">
                 
                 <div class="card" 
@@ -92,10 +88,10 @@
                      data-nombre="{{ bebida.nombre }}" 
                      data-desc="{{ bebida.descripcion }}" 
                      data-precio="{{ bebida.precio }}" 
-                     data-img="{{ bebida.imagen }}"
+                     data-img="{{ img_url }}"
                      onclick="abrirModal(this)">
                     <span class="badge" id="badge_{{ bebida.id }}">0</span>
-                    <img src="{{ bebida.imagen }}" alt="{{ bebida.nombre }}">
+                    <img src="{{ img_url }}" alt="{{ bebida.nombre }}">
                     <div class="card-body">
                         <h4 class="card-title">{{ bebida.nombre }}</h4>
                         <span class="card-price">S/ {{ "%.2f"|format(bebida.precio) }}</span>
@@ -110,7 +106,6 @@
         </form>
     </div>
 
-    <!-- EL MODAL (VENTANA EMERGENTE ÚNICA) -->
     <div id="platoModal" class="modal">
         <div class="modal-content">
             <span class="close" onclick="cerrarModal()">&times;</span>
