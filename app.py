@@ -16,7 +16,6 @@ basedir = os.path.abspath(os.path.dirname(__file__))
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///' + os.path.join(basedir, 'instance', 'database.db')
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
-# CARPETA PARA GUARDAR LAS FOTOS (Carga rápida)
 app.config['UPLOAD_FOLDER'] = os.path.join(basedir, 'static', 'uploads')
 
 db = SQLAlchemy(app)
@@ -174,6 +173,43 @@ def admin_dashboard():
     
     return render_template('admin.html', mesas=todas_mesas, platos=todos_platos, ganancias=ganancias_hoy)
 
+# --- NUEVA FUNCIÓN PARA EDITAR/CORREGIR PEDIDOS ---
+@app.route('/admin/pedido/editar-detalle/<int:detalle_id>', methods=['POST'])
+def editar_detalle(detalle_id):
+    if not session.get('admin_logged_in'):
+        return redirect(url_for('admin_login'))
+    
+    accion = request.form.get('accion')
+    detalle = DetallePedido.query.get(detalle_id)
+    
+    if detalle:
+        pedido = Pedido.query.get(detalle.pedido_id)
+        
+        # 1. Modificar la cantidad
+        if accion == 'restar' and detalle.cantidad > 1:
+            detalle.cantidad -= 1
+        elif accion == 'sumar':
+            detalle.cantidad += 1
+        elif accion == 'eliminar' or (accion == 'restar' and detalle.cantidad == 1):
+            db.session.delete(detalle)
+            db.session.commit() # Guardamos para que el cálculo siguiente sea exacto
+            
+        db.session.commit()
+        
+        # 2. Recalcular el total del pedido matemáticamente
+        detalles_restantes = DetallePedido.query.filter_by(pedido_id=pedido.id).all()
+        if len(detalles_restantes) == 0:
+            # Si borraron todo, eliminamos el pedido para liberar la mesa
+            db.session.delete(pedido)
+        else:
+            nuevo_total = sum(d.cantidad * d.precio_unitario for d in detalles_restantes)
+            pedido.total = nuevo_total
+            
+        db.session.commit()
+        
+    return redirect(url_for('admin_dashboard'))
+# --------------------------------------------------
+
 @app.route('/admin/cobrar/<int:pedido_id>', methods=['POST'])
 def cobrar_pedido(pedido_id):
     if not session.get('admin_logged_in'):
@@ -260,7 +296,6 @@ def agregar_plato():
     imagen_file = request.files.get('imagen')
     nombre_imagen = 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?auto=format&fit=crop&w=300&q=80' 
     
-    # GUARDAR LA FOTO EN LA CARPETA STATIC/UPLOADS
     if imagen_file and imagen_file.filename != '':
         filename = secure_filename(imagen_file.filename)
         unique_filename = str(uuid.uuid4().hex)[:8] + "_" + filename
