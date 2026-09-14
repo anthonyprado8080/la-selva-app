@@ -34,6 +34,12 @@
         .ventana-cobro h2 { color: #16a085; font-weight: 800; font-size: 1.8rem; margin-bottom: 5px; }
         .resumen-monto { display: flex; justify-content: space-between; align-items: center; background: white; padding: 15px; border-radius: 8px; margin-bottom: 15px; border: 1px dashed #1abc9c;}
         .input-file { border: 1px dashed #1abc9c; background: #f9fdfc; cursor: pointer; padding: 8px; width: 100%; max-width: 250px; }
+        
+        /* Botones de corrección de pedidos */
+        .btn-correccion { color: white; border: none; padding: 4px 10px; border-radius: 4px; cursor: pointer; font-weight: bold; font-size: 1rem; transition: 0.2s;}
+        .btn-restar { background-color: #f39c12; } .btn-restar:hover { background-color: #e67e22; }
+        .btn-sumar { background-color: #2ecc71; } .btn-sumar:hover { background-color: #27ae60; }
+        .btn-borrar { background-color: #e74c3c; } .btn-borrar:hover { background-color: #c0392b; }
     </style>
 </head>
 <body>
@@ -51,6 +57,7 @@
       {% endif %}
     {% endwith %}
 
+    <!-- VENTANA DE COBRO RÁPIDO -->
     <div class="section ventana-cobro">
         <h2>🧮 Ventana de Cobro Rápido</h2>
         <form id="form_cobro_rapido" method="POST" action="">
@@ -93,6 +100,7 @@
         </form>
     </div>
 
+    <!-- CAJA DEL DÍA -->
     <div class="section">
         <h2>💰 Caja del Día</h2>
         <div class="caja-total">S/ {{ "%.2f"|format(ganancias) }}</div>
@@ -101,6 +109,7 @@
         </form>
     </div>
 
+    <!-- GESTIÓN DE MESAS Y PEDIDOS (AQUÍ ESTÁ LA MAGIA DE EDITAR) -->
     <div class="section">
         <h2>🪑 Gestión de Mesas y Detalles</h2>
         <form action="/admin/mesa/agregar" method="POST" style="margin-bottom: 15px;">
@@ -111,7 +120,7 @@
         <table>
             <tr>
                 <th>Mesa</th>
-                <th>Comandas (con hora)</th>
+                <th>Comandas (con hora y edición)</th>
                 <th>Estado</th>
                 <th>Opciones</th>
             </tr>
@@ -124,14 +133,32 @@
                         {% if pedido_pendiente %}
                             <span style="color: #f39c12; font-weight: bold;">🔴 Comiendo</span>
                             <ul class="pedido-detalle" style="list-style-type: none; padding-left: 0;">
+                            
                             {% for detalle in pedido_pendiente.detalles %}
-                                <li style="margin-bottom: 5px;">
+                                <li style="margin-bottom: 8px; display: flex; align-items: center; flex-wrap: wrap; gap: 5px;">
                                     <span style="background-color: #3498db; color: white; padding: 2px 6px; border-radius: 4px; font-size: 0.75rem; font-weight: bold; margin-right: 5px;">
                                         {{ detalle.hora_pedido.strftime('%I:%M %p') }}
                                     </span>
-                                    <strong>{{ detalle.cantidad }}x</strong> {{ detalle.plato.nombre }}
+                                    <strong style="font-size: 1.1rem;">{{ detalle.cantidad }}x</strong> {{ detalle.plato.nombre }}
+                                    
+                                    <!-- BOTONES PARA CORREGIR PEDIDO -->
+                                    <div style="margin-left: auto; display: flex; gap: 3px;">
+                                        <form action="/admin/pedido/editar-detalle/{{ detalle.id }}" method="POST" style="margin: 0;">
+                                            <input type="hidden" name="accion" value="restar">
+                                            <button type="submit" class="btn-correccion btn-restar" title="Quitar 1">-</button>
+                                        </form>
+                                        <form action="/admin/pedido/editar-detalle/{{ detalle.id }}" method="POST" style="margin: 0;">
+                                            <input type="hidden" name="accion" value="sumar">
+                                            <button type="submit" class="btn-correccion btn-sumar" title="Añadir 1">+</button>
+                                        </form>
+                                        <form action="/admin/pedido/editar-detalle/{{ detalle.id }}" method="POST" style="margin: 0;">
+                                            <input type="hidden" name="accion" value="eliminar">
+                                            <button type="submit" class="btn-correccion btn-borrar" title="Eliminar todo" onclick="return confirm('¿Seguro que deseas eliminar este plato del pedido?');">✖</button>
+                                        </form>
+                                    </div>
                                 </li>
                             {% endfor %}
+                            
                             </ul>
                         {% else %}
                             <span style="color: #bdc3c7;">Libre</span>
@@ -158,6 +185,7 @@
         </table>
     </div>
 
+    <!-- CARTA -->
     <div class="section">
         <h2>🍔 Tu Carta</h2>
         <form action="/admin/plato/agregar" method="POST" enctype="multipart/form-data" style="margin-bottom: 15px; display: flex; flex-wrap: wrap; gap: 10px; align-items: center;">
