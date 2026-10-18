@@ -35,7 +35,6 @@
         .resumen-monto { display: flex; justify-content: space-between; align-items: center; background: white; padding: 15px; border-radius: 8px; margin-bottom: 15px; border: 1px dashed #1abc9c;}
         .input-file { border: 1px dashed #1abc9c; background: #f9fdfc; cursor: pointer; padding: 8px; width: 100%; max-width: 250px; }
         
-        /* Botones de corrección de pedidos */
         .btn-correccion { color: white; border: none; padding: 4px 10px; border-radius: 4px; cursor: pointer; font-weight: bold; font-size: 1rem; transition: 0.2s;}
         .btn-restar { background-color: #f39c12; } .btn-restar:hover { background-color: #e67e22; }
         .btn-sumar { background-color: #2ecc71; } .btn-sumar:hover { background-color: #27ae60; }
@@ -57,7 +56,6 @@
       {% endif %}
     {% endwith %}
 
-    <!-- VENTANA DE COBRO RÁPIDO -->
     <div class="section ventana-cobro">
         <h2>🧮 Ventana de Cobro Rápido</h2>
         <form id="form_cobro_rapido" method="POST" action="">
@@ -100,7 +98,6 @@
         </form>
     </div>
 
-    <!-- CAJA DEL DÍA -->
     <div class="section">
         <h2>💰 Caja del Día</h2>
         <div class="caja-total">S/ {{ "%.2f"|format(ganancias) }}</div>
@@ -109,7 +106,6 @@
         </form>
     </div>
 
-    <!-- GESTIÓN DE MESAS Y PEDIDOS (AQUÍ ESTÁ LA MAGIA DE EDITAR) -->
     <div class="section">
         <h2>🪑 Gestión de Mesas y Detalles</h2>
         <form action="/admin/mesa/agregar" method="POST" style="margin-bottom: 15px;">
@@ -133,7 +129,6 @@
                         {% if pedido_pendiente %}
                             <span style="color: #f39c12; font-weight: bold;">🔴 Comiendo</span>
                             <ul class="pedido-detalle" style="list-style-type: none; padding-left: 0;">
-                            
                             {% for detalle in pedido_pendiente.detalles %}
                                 <li style="margin-bottom: 8px; display: flex; align-items: center; flex-wrap: wrap; gap: 5px;">
                                     <span style="background-color: #3498db; color: white; padding: 2px 6px; border-radius: 4px; font-size: 0.75rem; font-weight: bold; margin-right: 5px;">
@@ -141,7 +136,6 @@
                                     </span>
                                     <strong style="font-size: 1.1rem;">{{ detalle.cantidad }}x</strong> {{ detalle.plato.nombre }}
                                     
-                                    <!-- BOTONES PARA CORREGIR PEDIDO -->
                                     <div style="margin-left: auto; display: flex; gap: 3px;">
                                         <form action="/admin/pedido/editar-detalle/{{ detalle.id }}" method="POST" style="margin: 0;">
                                             <input type="hidden" name="accion" value="restar">
@@ -158,7 +152,6 @@
                                     </div>
                                 </li>
                             {% endfor %}
-                            
                             </ul>
                         {% else %}
                             <span style="color: #bdc3c7;">Libre</span>
@@ -185,27 +178,31 @@
         </table>
     </div>
 
-    <!-- CARTA -->
     <div class="section">
         <h2>🍔 Tu Carta</h2>
         <form action="/admin/plato/agregar" method="POST" enctype="multipart/form-data" style="margin-bottom: 15px; display: flex; flex-wrap: wrap; gap: 10px; align-items: center;">
-            <input type="text" name="nombre" placeholder="Nombre del plato" required>
+            <input type="text" name="nombre" placeholder="Nombre del producto" required>
             <input type="text" name="descripcion" placeholder="Descripción breve"> 
             <input type="number" step="0.1" name="precio" placeholder="S/ Precio" required style="width: 100px;">
+            
+            <!-- AQUÍ AGREGAMOS LAS NUEVAS CATEGORÍAS -->
             <select name="categoria">
-                <option value="Comida">Comida</option><option value="Bebida">Bebida</option>
+                <option value="Comida">Comida</option>
+                <option value="Bebida">Bebida</option>
+                <option value="Golosinas">Golosinas</option>
+                <option value="Piscina">Piscina</option>
             </select>
             
             <input type="file" name="imagen" accept="image/*" class="input-file" required>
             
-            <button type="submit">Guardar Plato</button>
+            <button type="submit">Guardar Plato/Ticket</button>
         </form>
 
         <table>
             <tr>
-                <th>Plato</th>
+                <th>Producto</th>
                 <th>Categoría</th>
-                <th>Precio</th>
+                <th>Precio Actual</th>
                 <th>Estado</th>
                 <th>Opciones</th>
             </tr>
@@ -213,7 +210,14 @@
             <tr>
                 <td><strong>{{ plato.nombre }}</strong><br><small style="color: gray;">{{ plato.descripcion }}</small></td>
                 <td>{{ plato.categoria }}</td>
-                <td>S/ {{ "%.2f"|format(plato.precio) }}</td>
+                <td>
+                    <form action="/admin/plato/editar-precio/{{ plato.id }}" method="POST" style="display:flex; align-items:center; gap:5px; margin:0;">
+                        <strong style="color: #1abc9c;">S/</strong>
+                        <input type="number" step="0.10" name="nuevo_precio" value="{{ "%.2f"|format(plato.precio) }}" required style="width: 70px; padding: 5px; margin: 0; font-size: 0.9rem; border: 1px solid #bdc3c7; border-radius: 4px;">
+                        <button type="submit" style="padding: 5px 8px; background-color: #3498db; border-radius: 4px;" title="Guardar Nuevo Precio">💾</button>
+                    </form>
+                </td>
+                
                 <td>
                     {% if plato.disponible %}<span style="color: green; font-weight: bold;">✔ Activo</span>
                     {% else %}<span style="color: red; font-weight: bold;">✖ Agotado</span>{% endif %}

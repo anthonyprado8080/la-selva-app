@@ -54,51 +54,107 @@
     <div class="container">
         <form action="/enviar-pedido" method="POST" id="form-pedidos">
             
-            <h2>Comidas Principales</h2>
+            {% if comidas %}
+            <h2>🍽️ Comidas Principales</h2>
             <div class="grid">
-                {% for comida in comidas %}
-                {% set img_url = url_for('static', filename='uploads/' + comida.imagen) if not comida.imagen.startswith('http') else comida.imagen %}
-                <input type="hidden" name="plato_{{ comida.id }}" id="input_{{ comida.id }}" value="0">
+                {% for item in comidas %}
+                {% set img_url = url_for('static', filename='uploads/' + item.imagen) if not item.imagen.startswith('http') else item.imagen %}
+                <input type="hidden" name="plato_{{ item.id }}" id="input_{{ item.id }}" value="0">
                 
                 <div class="card" 
-                     data-id="{{ comida.id }}" 
-                     data-nombre="{{ comida.nombre }}" 
-                     data-desc="{{ comida.descripcion }}" 
-                     data-precio="{{ comida.precio }}" 
+                     data-id="{{ item.id }}" 
+                     data-nombre="{{ item.nombre }}" 
+                     data-desc="{{ item.descripcion }}" 
+                     data-precio="{{ item.precio }}" 
                      data-img="{{ img_url }}"
                      onclick="abrirModal(this)">
-                    <span class="badge" id="badge_{{ comida.id }}">0</span>
-                    <img src="{{ img_url }}" alt="{{ comida.nombre }}">
+                    <span class="badge" id="badge_{{ item.id }}">0</span>
+                    <img src="{{ img_url }}" alt="{{ item.nombre }}">
                     <div class="card-body">
-                        <h4 class="card-title">{{ comida.nombre }}</h4>
-                        <span class="card-price">S/ {{ "%.2f"|format(comida.precio) }}</span>
+                        <h4 class="card-title">{{ item.nombre }}</h4>
+                        <span class="card-price">S/ {{ "%.2f"|format(item.precio) }}</span>
                     </div>
                 </div>
                 {% endfor %}
             </div>
+            {% endif %}
 
-            <h2>Bebidas Refrescantes</h2>
+            {% if bebidas %}
+            <h2>🍹 Bebidas Refrescantes</h2>
             <div class="grid">
-                {% for bebida in bebidas %}
-                {% set img_url = url_for('static', filename='uploads/' + bebida.imagen) if not bebida.imagen.startswith('http') else bebida.imagen %}
-                <input type="hidden" name="plato_{{ bebida.id }}" id="input_{{ bebida.id }}" value="0">
+                {% for item in bebidas %}
+                {% set img_url = url_for('static', filename='uploads/' + item.imagen) if not item.imagen.startswith('http') else item.imagen %}
+                <input type="hidden" name="plato_{{ item.id }}" id="input_{{ item.id }}" value="0">
                 
                 <div class="card" 
-                     data-id="{{ bebida.id }}" 
-                     data-nombre="{{ bebida.nombre }}" 
-                     data-desc="{{ bebida.descripcion }}" 
-                     data-precio="{{ bebida.precio }}" 
+                     data-id="{{ item.id }}" 
+                     data-nombre="{{ item.nombre }}" 
+                     data-desc="{{ item.descripcion }}" 
+                     data-precio="{{ item.precio }}" 
                      data-img="{{ img_url }}"
                      onclick="abrirModal(this)">
-                    <span class="badge" id="badge_{{ bebida.id }}">0</span>
-                    <img src="{{ img_url }}" alt="{{ bebida.nombre }}">
+                    <span class="badge" id="badge_{{ item.id }}">0</span>
+                    <img src="{{ img_url }}" alt="{{ item.nombre }}">
                     <div class="card-body">
-                        <h4 class="card-title">{{ bebida.nombre }}</h4>
-                        <span class="card-price">S/ {{ "%.2f"|format(bebida.precio) }}</span>
+                        <h4 class="card-title">{{ item.nombre }}</h4>
+                        <span class="card-price">S/ {{ "%.2f"|format(item.precio) }}</span>
                     </div>
                 </div>
                 {% endfor %}
             </div>
+            {% endif %}
+
+            <!-- NUEVA SECCIÓN: GOLOSINAS -->
+            {% if golosinas %}
+            <h2>🍬 Golosinas y Snacks</h2>
+            <div class="grid">
+                {% for item in golosinas %}
+                {% set img_url = url_for('static', filename='uploads/' + item.imagen) if not item.imagen.startswith('http') else item.imagen %}
+                <input type="hidden" name="plato_{{ item.id }}" id="input_{{ item.id }}" value="0">
+                
+                <div class="card" 
+                     data-id="{{ item.id }}" 
+                     data-nombre="{{ item.nombre }}" 
+                     data-desc="{{ item.descripcion }}" 
+                     data-precio="{{ item.precio }}" 
+                     data-img="{{ img_url }}"
+                     onclick="abrirModal(this)">
+                    <span class="badge" id="badge_{{ item.id }}">0</span>
+                    <img src="{{ img_url }}" alt="{{ item.nombre }}">
+                    <div class="card-body">
+                        <h4 class="card-title">{{ item.nombre }}</h4>
+                        <span class="card-price">S/ {{ "%.2f"|format(item.precio) }}</span>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+            {% endif %}
+
+            <!-- NUEVA SECCIÓN: PISCINA -->
+            {% if piscina %}
+            <h2>🏊‍♂️ Accesos a Piscina</h2>
+            <div class="grid">
+                {% for item in piscina %}
+                {% set img_url = url_for('static', filename='uploads/' + item.imagen) if not item.imagen.startswith('http') else item.imagen %}
+                <input type="hidden" name="plato_{{ item.id }}" id="input_{{ item.id }}" value="0">
+                
+                <div class="card" 
+                     data-id="{{ item.id }}" 
+                     data-nombre="{{ item.nombre }}" 
+                     data-desc="{{ item.descripcion }}" 
+                     data-precio="{{ item.precio }}" 
+                     data-img="{{ img_url }}"
+                     onclick="abrirModal(this)">
+                    <span class="badge" id="badge_{{ item.id }}">0</span>
+                    <img src="{{ img_url }}" alt="{{ item.nombre }}">
+                    <div class="card-body">
+                        <h4 class="card-title">{{ item.nombre }}</h4>
+                        <span class="card-price">S/ {{ "%.2f"|format(item.precio) }}</span>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+            {% endif %}
 
             <div class="sticky-footer">
                 <button type="submit" class="btn-enviar">Cocinar mi Pedido 👨‍🍳</button>

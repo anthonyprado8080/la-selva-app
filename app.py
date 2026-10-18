@@ -91,10 +91,18 @@ def ver_carta():
     if 'mesa_id' not in session:
         return redirect(url_for('login_mesa'))
         
+    # AQUÍ BUSCAMOS LAS 4 CATEGORÍAS EN LA BASE DE DATOS
     platos_comida = Plato.query.filter_by(categoria='Comida', disponible=True).all()
     platos_bebida = Plato.query.filter_by(categoria='Bebida', disponible=True).all()
+    platos_golosinas = Plato.query.filter_by(categoria='Golosinas', disponible=True).all()
+    platos_piscina = Plato.query.filter_by(categoria='Piscina', disponible=True).all()
         
-    return render_template('index.html', mesa_numero=session.get('mesa_numero'), comidas=platos_comida, bebidas=platos_bebida)
+    return render_template('index.html', 
+                           mesa_numero=session.get('mesa_numero'), 
+                           comidas=platos_comida, 
+                           bebidas=platos_bebida,
+                           golosinas=platos_golosinas,
+                           piscina=platos_piscina)
 
 @app.route('/enviar-pedido', methods=['POST'])
 def enviar_pedido():
@@ -115,7 +123,7 @@ def enviar_pedido():
                 platos_pedidos.append({'plato_id': id_plato, 'cantidad': cantidad, 'precio_unitario': plato_db.precio})
 
     if not platos_pedidos:
-        flash('Debes seleccionar al menos un plato.', 'error')
+        flash('Debes seleccionar al menos un producto.', 'error')
         return redirect(url_for('ver_carta'))
 
     pedido_actual = Pedido.query.filter_by(mesa_id=mesa_id, estado='Pendiente').first()
@@ -173,7 +181,6 @@ def admin_dashboard():
     
     return render_template('admin.html', mesas=todas_mesas, platos=todos_platos, ganancias=ganancias_hoy)
 
-# --- NUEVA FUNCIÓN PARA EDITAR/CORREGIR PEDIDOS ---
 @app.route('/admin/pedido/editar-detalle/<int:detalle_id>', methods=['POST'])
 def editar_detalle(detalle_id):
     if not session.get('admin_logged_in'):
@@ -184,31 +191,24 @@ def editar_detalle(detalle_id):
     
     if detalle:
         pedido = Pedido.query.get(detalle.pedido_id)
-        
-        # 1. Modificar la cantidad
         if accion == 'restar' and detalle.cantidad > 1:
             detalle.cantidad -= 1
         elif accion == 'sumar':
             detalle.cantidad += 1
         elif accion == 'eliminar' or (accion == 'restar' and detalle.cantidad == 1):
             db.session.delete(detalle)
-            db.session.commit() # Guardamos para que el cálculo siguiente sea exacto
+            db.session.commit()
             
         db.session.commit()
-        
-        # 2. Recalcular el total del pedido matemáticamente
         detalles_restantes = DetallePedido.query.filter_by(pedido_id=pedido.id).all()
         if len(detalles_restantes) == 0:
-            # Si borraron todo, eliminamos el pedido para liberar la mesa
             db.session.delete(pedido)
         else:
             nuevo_total = sum(d.cantidad * d.precio_unitario for d in detalles_restantes)
             pedido.total = nuevo_total
             
         db.session.commit()
-        
     return redirect(url_for('admin_dashboard'))
-# --------------------------------------------------
 
 @app.route('/admin/cobrar/<int:pedido_id>', methods=['POST'])
 def cobrar_pedido(pedido_id):
@@ -305,6 +305,21 @@ def agregar_plato():
     nuevo_plato = Plato(nombre=nombre, descripcion=descripcion, precio=precio, categoria=categoria, imagen=nombre_imagen)
     db.session.add(nuevo_plato)
     db.session.commit()
+    return redirect(url_for('admin_dashboard'))
+
+@app.route('/admin/plato/editar-precio/<int:id>', methods=['POST'])
+def editar_precio_plato(id):
+    if not session.get('admin_logged_in'):
+        return redirect(url_for('admin_login'))
+    plato = Plato.query.get(id)
+    nuevo_precio = request.form.get('nuevo_precio')
+    if plato and nuevo_precio:
+        try:
+            plato.precio = float(nuevo_precio)
+            db.session.commit()
+            flash(f'Precio de {plato.nombre} actualizado a S/ {plato.precio:.2f}', 'success')
+        except ValueError:
+            flash('Error: El precio debe ser un número válido.', 'error')
     return redirect(url_for('admin_dashboard'))
 
 @app.route('/admin/plato/toggle/<int:id>', methods=['POST'])
