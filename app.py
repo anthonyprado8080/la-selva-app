@@ -1,7 +1,12 @@
-from flask import Flask, render_template, request, redirect, url_for, session, flash
+from flask import Flask, Response, render_template, request, redirect, url_for, session, flash
 from flask_sqlalchemy import SQLAlchemy
 from werkzeug.security import generate_password_hash, check_password_hash
 from werkzeug.utils import secure_filename
+import base64
+import csv
+import io
+import json
+import mimetypes
 import os
 import uuid
 from datetime import datetime, timedelta
@@ -102,7 +107,9 @@ def ver_carta():
                            comidas=platos_comida, 
                            bebidas=platos_bebida,
                            golosinas=platos_golosinas,
-                           piscina=platos_piscina)
+                           piscina=platos_piscina,
+                           mesas=Mesa.query.order_by(Mesa.numero).all(),
+                           pedido_actual=Pedido.query.filter_by(mesa_id=session['mesa_id'], estado='Pendiente').first())
 
 @app.route('/enviar-pedido', methods=['POST'])
 def enviar_pedido():
@@ -161,25 +168,69 @@ def logout():
 def admin_login():
     if request.method == 'POST':
         password = request.form.get('password', '').strip()
+        # El botón Cobrar de la carta llega con ?mesa=N: se conserva para dejar esa cuenta lista
+        mesa = request.args.get('mesa', type=int)
         if password == 'admin':
             session['admin_logged_in'] = True
-            return redirect(url_for('admin_dashboard'))
+            return redirect(url_for('admin_dashboard', mesa=mesa))
         else:
             flash('Contraseña incorrecta.', 'error')
-            return redirect(url_for('admin_login'))
-    return render_template('login_admin.html')
+            return redirect(url_for('admin_login', mesa=mesa))
+    return render_template('login_admin.html', mesa=request.args.get('mesa', type=int))
 
 @app.route('/admin')
 def admin_dashboard():
     if not session.get('admin_logged_in'):
-        return redirect(url_for('admin_login'))
-        
+        return redirect(url_for('admin_login', mesa=request.args.get('mesa', type=int)))
+
     todas_mesas = Mesa.query.order_by(Mesa.numero).all()
     todos_platos = Plato.query.all()
     pedidos_pagados = Pedido.query.filter_by(estado='Pagado').all()
     ganancias_hoy = sum(pedido.total for pedido in pedidos_pagados)
     
-    return render_template('admin.html', mesas=todas_mesas, platos=todos_platos, ganancias=ganancias_hoy)
+    return render_template('admin.html', mesas=todas_mesas, platos=todos_platos, ganancias=ganancias_hoy, pedidos_pagados=pedidos_pagados)
+
+@app.route('/admin/exportar-csv')
+def exportar_csv():
+    if not session.get('admin_logged_in'):
+        return redirect(url_for('admin_login'))
+
+    # El apóstrofo evita que Excel ejecute como fórmula un nombre de producto
+    def celda(valor):
+        texto = str(valor)
+        return "'" + texto if texto[:1] in ('=', '+', '-', '@') else texto
+
+    salida = io.StringIO()
+    escritor = csv.writer(salida)
+    escritor.writerow(['Ticket', 'Fecha', 'Mesa', 'Detalle', 'Metodo de pago', 'Total', 'Recibido', 'Vuelto'])
+    for pedido in Pedido.query.filter_by(estado='Pagado').order_by(Pedido.fecha_hora).all():
+        detalle = ' | '.join(f"{d.cantidad} x {d.plato.nombre if d.plato else 'Producto eliminado'}" for d in pedido.detalles)
+        escritor.writerow([f'{pedido.id:06d}', pedido.fecha_hora.strftime('%d/%m/%Y %H:%M'), pedido.mesa_asignada.numero, celda(detalle),
+                           pedido.metodo_pago, f'{pedido.total:.2f}', f'{pedido.monto_recibido:.2f}', f'{pedido.vuelto:.2f}'])
+
+    nombre = f"ventas-selva-del-prado-{obtener_hora_peru().strftime('%Y-%m-%d')}.csv"
+    return Response('﻿' + salida.getvalue(), mimetype='text/csv; charset=utf-8',
+                    headers={'Content-Disposition': f'attachment; filename={nombre}'})
+
+@app.route('/admin/copia-seguridad')
+def copia_seguridad():
+    if not session.get('admin_logged_in'):
+        return redirect(url_for('admin_login'))
+
+    def imagen_base64(imagen):
+        ruta = os.path.join(app.config['UPLOAD_FOLDER'], os.path.basename(imagen or ''))
+        if not imagen or imagen.startswith('http') or not os.path.isfile(ruta):
+            return None
+        tipo = mimetypes.guess_type(ruta)[0] or 'application/octet-stream'
+        with open(ruta, 'rb') as archivo:
+            return f'data:{tipo};base64,' + base64.b64encode(archivo.read()).decode('ascii')
+
+    catalogo = [{'id': p.id, 'nombre': p.nombre, 'descripcion': p.descripcion, 'precio': p.precio, 'categoria': p.categoria,
+                 'disponible': p.disponible, 'imagen': p.imagen, 'imagen_base64': imagen_base64(p.imagen)} for p in Plato.query.all()]
+    fecha = obtener_hora_peru()
+    copia = {'exportado': fecha.isoformat(timespec='seconds'), 'platos': catalogo}
+    return Response(json.dumps(copia, ensure_ascii=False, indent=2), mimetype='application/json',
+                    headers={'Content-Disposition': f"attachment; filename=menu-selva-del-prado-{fecha.strftime('%Y-%m-%d')}.json"})
 
 @app.route('/admin/pedido/editar-detalle/<int:detalle_id>', methods=['POST'])
 def editar_detalle(detalle_id):
@@ -306,6 +357,41 @@ def agregar_plato():
     db.session.add(nuevo_plato)
     db.session.commit()
     return redirect(url_for('admin_dashboard'))
+
+@app.route('/admin/plato/editar/<int:id>', methods=['POST'])
+def editar_plato(id):
+    if not session.get('admin_logged_in'):
+        return redirect(url_for('admin_login'))
+
+    destino = url_for('ver_carta') if request.form.get('volver') == 'carta' and 'mesa_id' in session else url_for('admin_dashboard')
+    plato = Plato.query.get(id)
+    if not plato:
+        return redirect(destino)
+
+    # Solo cambia lo que llega: la carta envía únicamente la foto
+    for campo in ('nombre', 'descripcion', 'categoria'):
+        if campo in request.form:
+            setattr(plato, campo, request.form[campo].strip())
+    if 'precio' in request.form:
+        try:
+            plato.precio = float(request.form['precio'])
+        except ValueError:
+            flash('Error: El precio debe ser un número válido.', 'error')
+            return redirect(destino)
+
+    imagen_file = request.files.get('imagen')
+    if imagen_file and imagen_file.filename != '':
+        filename = secure_filename(imagen_file.filename)
+        if os.path.splitext(filename)[1].lower() not in ('.jpg', '.jpeg', '.png', '.webp'):
+            flash('La foto debe ser JPG, PNG o WEBP.', 'error')
+            return redirect(destino)
+        unique_filename = str(uuid.uuid4().hex)[:8] + "_" + filename
+        imagen_file.save(os.path.join(app.config['UPLOAD_FOLDER'], unique_filename))
+        plato.imagen = unique_filename
+
+    db.session.commit()
+    flash(f'{plato.nombre} actualizado.', 'success')
+    return redirect(destino)
 
 @app.route('/admin/plato/editar-precio/<int:id>', methods=['POST'])
 def editar_precio_plato(id):

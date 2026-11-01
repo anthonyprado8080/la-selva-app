@@ -2,35 +2,39 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Acceso Admin - La Selva del Prado</title>
+    {% include '_theme.html' %}
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap');
-        body { margin: 0; font-family: 'Poppins', sans-serif; background: #2c3e50; display: flex; justify-content: center; align-items: center; height: 100vh; }
-        .admin-card { background: white; padding: 40px 30px; border-radius: 15px; box-shadow: 0 10px 30px rgba(0,0,0,0.3); width: 100%; max-width: 350px; text-align: center; }
-        h2 { color: #2c3e50; margin-bottom: 25px; }
-        input { width: 100%; padding: 12px; margin-bottom: 20px; border: 1px solid #ccc; border-radius: 8px; font-family: 'Poppins'; box-sizing: border-box; }
-        button { width: 100%; background-color: #34495e; color: white; border: none; padding: 15px; border-radius: 8px; font-weight: 600; cursor: pointer; transition: 0.3s; }
-        button:hover { background-color: #1a252f; }
-        .flash { color: #e74c3c; margin-bottom: 15px; font-size: 0.9rem; }
-        .btn-volver { display: inline-block; margin-top: 20px; color: #7f8c8d; text-decoration: none; font-size: 0.9rem; transition: color 0.3s; }
-        .btn-volver:hover { color: #1abc9c; text-decoration: underline; }
+        .candado { transition: transform .3s cubic-bezier(.3,1.6,.5,1), background-color .3s; }
+        .tarjeta:focus-within .candado { transform: rotate(-8deg) scale(1.08); background-color: #c98a3c; color: #07150f; }
     </style>
 </head>
-<body>
-    <div class="admin-card">
-        <h2>🔒 Panel de Control</h2>
+<body class="selva-bg min-h-screen text-hueso font-sans antialiased overflow-x-hidden flex items-center justify-center p-4">
+    <div class="fixed -right-24 -bottom-32 w-[30rem] h-[30rem] rounded-full bg-ambar-500/20 blur-3xl" aria-hidden="true"></div>
+    <div class="fixed -left-24 -top-24 w-[26rem] h-[26rem] rounded-full bg-esmeralda-700/30 blur-3xl" aria-hidden="true"></div>
+
+    <main class="tarjeta glass entrada relative w-full max-w-sm rounded-[2rem] p-8 shadow-alta text-center">
+        <span class="candado inline-grid place-items-center w-16 h-16 rounded-2xl bg-white/10 text-ambar-300 text-2xl"><i class="fa-solid fa-lock" aria-hidden="true"></i></span>
+        <p class="mt-5 text-xs font-semibold tracking-[.3em] uppercase text-ambar-300">Administración</p>
+        <h1 class="font-display text-5xl mt-2">Panel de Control</h1>
+
         {% with messages = get_flashed_messages(with_categories=true) %}
-            {% if messages %}
-                {% for category, message in messages %}
-                    <div class="flash">{{ message }}</div>
-                {% endfor %}
-            {% endif %}
+            {% for category, message in messages %}
+                <p role="alert" class="mt-5 rounded-2xl bg-alerta/90 text-white text-sm font-semibold px-4 py-3">{{ message }}</p>
+            {% endfor %}
         {% endwith %}
-        <form action="/admin-login" method="POST">
-            <input type="password" name="password" placeholder="Clave maestra" required>
-            <button type="submit">Ingresar</button>
+
+        <form action="{{ url_for('admin_login', mesa=mesa) }}" method="POST" class="mt-6 space-y-5 text-left">
+            <div>
+                <label for="password" class="block text-sm font-semibold mb-2">Clave maestra</label>
+                <input id="password" type="password" name="password" required autofocus autocomplete="current-password" class="campo campo-oscuro">
+            </div>
+            <button type="submit" class="brillo w-full rounded-2xl bg-ambar-500 text-selva-950 font-bold py-4 hover:bg-ambar-300 focus:outline-none focus-visible:ring-4 focus-visible:ring-hueso">
+                Ingresar <i class="fa-solid fa-arrow-right ml-2" aria-hidden="true"></i>
+            </button>
         </form>
-        <a href="/" class="btn-volver">⬅ Volver al inicio</a>
-    </div>
+        <a href="/" class="inline-block mt-6 text-sm text-selva-200 hover:text-ambar-300 transition"><i class="fa-solid fa-arrow-left mr-2" aria-hidden="true"></i>Volver al inicio</a>
+    </main>
 </body>
 </html>

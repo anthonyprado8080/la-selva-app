@@ -4,24 +4,47 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Bienvenidos - La Selva del Prado</title>
+    {% include '_theme.html' %}
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;800&display=swap');
-        body { margin: 0; font-family: 'Poppins', sans-serif; height: 100vh; display: flex; flex-direction: column; justify-content: center; align-items: center; background: linear-gradient(135deg, #1abc9c 0%, #0e6655 100%); color: white; text-align: center; position: relative; }
-        .hero { background: rgba(255, 255, 255, 0.1); padding: 40px; border-radius: 20px; backdrop-filter: blur(10px); box-shadow: 0 15px 35px rgba(0,0,0,0.2); max-width: 90%; }
-        h1 { font-size: 2.5rem; margin-bottom: 10px; font-weight: 800; }
-        p { font-size: 1.2rem; margin-bottom: 30px; }
-        .btn { background-color: #f39c12; color: white; padding: 15px 30px; font-size: 1.2rem; text-decoration: none; border-radius: 30px; font-weight: 600; box-shadow: 0 4px 15px rgba(243, 156, 18, 0.4); transition: transform 0.2s; display: inline-block;}
-        .btn:hover { transform: scale(1.05); }
-        .admin-btn { position: absolute; bottom: 20px; right: 20px; background: rgba(0, 0, 0, 0.15); color: rgba(255, 255, 255, 0.8); text-decoration: none; padding: 8px 15px; border-radius: 20px; font-size: 0.85rem; font-weight: 600; transition: all 0.3s ease; }
-        .admin-btn:hover { background: rgba(0, 0, 0, 0.4); color: white; }
+        .aparece { animation: aparece 1.4s ease-out backwards; }
+        @keyframes aparece { from { opacity: 0; filter: blur(8px); } }
     </style>
 </head>
-<body>
-    <div class="hero">
-        <h1>🌿 La Selva del Prado</h1>
-        <p>Los mejores sabores amazónicos directo a tu mesa</p>
-        <a href="/login-mesa" class="btn">Empezar a Pedir</a>
+<body class="selva-bg min-h-screen text-hueso font-sans antialiased overflow-x-hidden">
+    {% macro hoja(clases, giro, demora) %}
+    <div class="hoja hoja-mece aparece {{ clases }}" style="--giro: {{ giro }}deg; animation-delay: {{ demora }}s, {{ demora }}s; animation-name: mecer, aparece; animation-duration: 12s, 1.6s; animation-iteration-count: infinite, 1; animation-direction: alternate, normal;" aria-hidden="true">
+        <svg viewBox="0 0 100 240"><path d="M50 238V8M50 8C12 46 3 112 17 162c7 26 21 48 33 66 12-18 26-40 33-66C97 112 88 46 50 8Z"/><path d="M50 58C40 50 32 47 23 48M50 58c10-8 18-11 27-10M50 92C36 80 24 76 11 79M50 92c14-12 26-16 39-13M50 128C36 116 23 112 9 116M50 128c14-12 27-16 41-12M50 164c-12-10-22-14-34-12M50 164c12-10 22-14 34-12"/></svg>
     </div>
-    <a href="/admin-login" class="admin-btn">🔒 Admin</a>
+    {% endmacro %}
+    {{ hoja('w-72 h-[34rem] -left-16 -bottom-24 opacity-40', -14, 0) }}
+    {{ hoja('w-52 h-96 left-32 -bottom-32 opacity-25', 12, 0.3) }}
+    {{ hoja('w-80 h-[38rem] -right-20 -top-28 text-ambar-500 opacity-30', 168, 0.15) }}
+    {{ hoja('w-48 h-96 right-48 -top-40 opacity-25', 196, 0.45) }}
+
+    <main class="relative z-10 min-h-screen max-w-5xl mx-auto px-5 py-12 flex flex-col items-center justify-center text-center">
+        <div class="entrada">{% with logo_class='w-24 h-24 mx-auto' %}{% include '_logo.html' %}{% endwith %}</div>
+        <p class="entrada mt-6 text-ambar-300 text-xs sm:text-sm font-semibold tracking-[.4em] uppercase" style="animation-delay:.1s">Recreo Turístico</p>
+        <h1 class="entrada font-display font-medium text-6xl sm:text-8xl lg:text-9xl leading-[.92] tracking-tight mt-4" style="animation-delay:.2s">La Selva <em class="text-ambar-300">del Prado</em></h1>
+        <p class="entrada mt-6 text-lg text-selva-200 max-w-xl" style="animation-delay:.3s">Los mejores sabores amazónicos, directo a tu mesa.</p>
+
+        <a href="/login-mesa" class="brillo entrada mt-10 inline-flex items-center gap-3 rounded-full bg-ambar-500 text-selva-950 font-bold text-lg px-9 py-4 shadow-oro hover:bg-ambar-300 focus:outline-none focus-visible:ring-4 focus-visible:ring-hueso" style="animation-delay:.4s">
+            Ingresar al Sistema <i class="fa-solid fa-arrow-right" aria-hidden="true"></i>
+        </a>
+
+        <div class="entrada grid sm:grid-cols-2 gap-4 w-full max-w-2xl mt-12 text-left" style="animation-delay:.55s">
+            <a href="/login-mesa" class="glass group rounded-3xl p-5 flex items-center gap-4 transition hover:-translate-y-1 hover:border-esmeralda-300/60 focus:outline-none focus-visible:ring-2 focus-visible:ring-ambar-300">
+                <span class="w-12 h-12 shrink-0 rounded-2xl bg-esmeralda-700 grid place-items-center transition group-hover:scale-110"><i class="fa-solid fa-utensils" aria-hidden="true"></i></span>
+                <span><span class="block font-bold">Atención en mesa</span><span class="block text-sm text-selva-200">Abre tu mesa y mira la carta</span></span>
+            </a>
+            <a href="/admin-login" class="glass group rounded-3xl p-5 flex items-center gap-4 transition hover:-translate-y-1 hover:border-ambar-300/60 focus:outline-none focus-visible:ring-2 focus-visible:ring-ambar-300">
+                <span class="w-12 h-12 shrink-0 rounded-2xl bg-ambar-700 grid place-items-center transition group-hover:scale-110"><i class="fa-solid fa-lock" aria-hidden="true"></i></span>
+                <span><span class="block font-bold">Caja y administración</span><span class="block text-sm text-selva-200">Cobros, ventas y carta</span></span>
+            </a>
+        </div>
+
+        <footer class="entrada mt-12 text-sm text-selva-200/80" style="animation-delay:.7s">
+            RUC 10433857009 · Carretera Tingo María-Monzón, Centro Poblado Bella, Tingo María
+        </footer>
+    </main>
 </body>
 </html>

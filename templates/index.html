@@ -4,223 +4,316 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Carta - La Selva del Prado</title>
+    {% include '_theme.html' %}
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap');
-        body { margin: 0; font-family: 'Poppins', sans-serif; background-color: #f8f9fa; padding-bottom: 80px; }
-        .header { background: white; padding: 15px 20px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 2px 10px rgba(0,0,0,0.05); position: sticky; top: 0; z-index: 100; }
-        .header h3 { margin: 0; color: #1abc9c; }
-        .logout { color: #e74c3c; text-decoration: none; font-weight: 600; font-size: 0.9rem; }
-        .container { max-width: 1000px; margin: 0 auto; padding: 20px; }
-        h2 { color: #2c3e50; margin-top: 30px; border-bottom: 2px solid #1abc9c; display: inline-block; padding-bottom: 5px; }
-        
-        .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 20px; margin-top: 20px; }
-        
-        .card { background: white; border-radius: 15px; overflow: hidden; box-shadow: 0 5px 15px rgba(0,0,0,0.05); display: flex; flex-direction: column; cursor: pointer; transition: transform 0.2s; position: relative; }
-        .card:hover { transform: translateY(-5px); box-shadow: 0 8px 25px rgba(0,0,0,0.1); }
-        .card img { width: 100%; height: 160px; object-fit: cover; }
-        .card-body { padding: 15px; text-align: center; }
-        .card-title { font-size: 1.1rem; font-weight: 700; color: #2c3e50; margin: 0 0 5px 0; }
-        .card-price { font-size: 1.2rem; font-weight: 700; color: #1abc9c; display: block; margin-top: 10px; }
-        
-        .badge { position: absolute; top: 10px; right: 10px; background: #e74c3c; color: white; font-weight: bold; font-size: 1.2rem; padding: 5px 15px; border-radius: 20px; display: none; box-shadow: 0 4px 10px rgba(0,0,0,0.2); }
-        
-        .modal { display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.6); backdrop-filter: blur(5px); justify-content: center; align-items: center; }
-        .modal-content { background: white; border-radius: 20px; padding: 20px; width: 90%; max-width: 400px; text-align: center; position: relative; animation: slideIn 0.3s ease-out; }
-        @keyframes slideIn { from { transform: translateY(50px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
-        .modal-img { width: 100%; height: 200px; object-fit: cover; border-radius: 15px; margin-bottom: 15px; }
-        .modal-title { font-size: 1.5rem; font-weight: 700; color: #2c3e50; margin: 0 0 10px 0; }
-        .modal-desc { color: #7f8c8d; font-size: 0.95rem; margin-bottom: 20px; }
-        .modal-price { font-size: 1.5rem; color: #1abc9c; font-weight: bold; margin-bottom: 20px; }
-        .close { position: absolute; top: 15px; right: 15px; font-size: 1.8rem; font-weight: bold; color: white; background: rgba(0,0,0,0.5); border-radius: 50%; width: 35px; height: 35px; line-height: 35px; cursor: pointer; }
-        
-        .qty-controls { display: flex; justify-content: center; align-items: center; gap: 15px; margin-bottom: 20px; }
-        .btn-qty { background: #f0f0f0; border: none; font-size: 1.5rem; width: 40px; height: 40px; border-radius: 10px; cursor: pointer; font-weight: bold; color: #2c3e50; transition: 0.2s; }
-        .btn-qty:hover { background: #e0e0e0; }
-        .input-qty { width: 60px; text-align: center; font-size: 1.5rem; font-weight: bold; border: none; outline: none; }
-        .btn-confirmar { background: #1abc9c; color: white; border: none; padding: 15px; width: 100%; font-size: 1.1rem; font-weight: bold; border-radius: 12px; cursor: pointer; transition: 0.3s; }
-        .btn-confirmar:hover { background: #16a085; }
-
-        .sticky-footer { position: fixed; bottom: 0; left: 0; width: 100%; background: white; padding: 15px 0; box-shadow: 0 -5px 15px rgba(0,0,0,0.05); text-align: center; z-index: 100; }
-        .btn-enviar { background: #f39c12; color: white; border: none; padding: 15px 40px; font-size: 1.1rem; font-weight: 700; border-radius: 30px; cursor: pointer; box-shadow: 0 4px 15px rgba(243, 156, 18, 0.4); width: 90%; max-width: 400px; }
-        .btn-enviar:hover { transform: translateY(-2px); background: #e67e22; }
+        .plato img { transition: transform .9s cubic-bezier(.2,.7,.2,1); }
+        .plato:hover img { transform: scale(1.08); }
+        .plato { transition: transform .35s, border-color .35s, box-shadow .35s; }
+        .plato:hover { transform: translateY(-4px); border-color: rgba(232,199,144,.45); box-shadow: 0 24px 40px -22px rgba(0,0,0,.8); }
+        .plato.en-cuenta { border-color: #c98a3c; }
+        .sin-foto { background: linear-gradient(145deg, #1c4a38, #0c241a); }
+        .tres-lineas { display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
+        .pulso { animation: pulso .3s ease-out; }
+        @keyframes pulso { 50% { transform: scale(1.3); } }
+        .scroll-fino { scrollbar-width: thin; scrollbar-color: rgba(232,199,144,.4) transparent; }
+        .fila-cuenta { animation: entrada .3s ease-out; }
     </style>
 </head>
-<body>
-    <div class="header">
-        <h3>🍽️ Mesa {{ mesa_numero }}</h3>
-        <a href="/logout" class="logout">Salir</a>
-    </div>
-    
-    <div class="container">
-        <form action="/enviar-pedido" method="POST" id="form-pedidos">
-            
-            {% if comidas %}
-            <h2>🍽️ Comidas Principales</h2>
-            <div class="grid">
-                {% for item in comidas %}
-                {% set img_url = url_for('static', filename='uploads/' + item.imagen) if not item.imagen.startswith('http') else item.imagen %}
-                <input type="hidden" name="plato_{{ item.id }}" id="input_{{ item.id }}" value="0">
-                
-                <div class="card" 
-                     data-id="{{ item.id }}" 
-                     data-nombre="{{ item.nombre }}" 
-                     data-desc="{{ item.descripcion }}" 
-                     data-precio="{{ item.precio }}" 
-                     data-img="{{ img_url }}"
-                     onclick="abrirModal(this)">
-                    <span class="badge" id="badge_{{ item.id }}">0</span>
-                    <img src="{{ img_url }}" alt="{{ item.nombre }}">
-                    <div class="card-body">
-                        <h4 class="card-title">{{ item.nombre }}</h4>
-                        <span class="card-price">S/ {{ "%.2f"|format(item.precio) }}</span>
-                    </div>
+<body class="selva-bg min-h-screen text-hueso font-sans antialiased overflow-x-hidden">
+{% set abierta = pedido_actual is not none %}
+<div class="flex gap-4 p-3 sm:p-4 pb-28 lg:pb-4 max-w-[110rem] mx-auto">
+
+    <nav aria-label="Principal" class="glass hidden md:flex flex-col items-center gap-3 w-[4.5rem] shrink-0 rounded-3xl py-5 sticky top-4 h-[calc(100vh-2rem)]">
+        <i class="fa-solid fa-leaf text-2xl text-ambar-300 mb-5" aria-hidden="true"></i>
+        <a href="#carta" title="Carta" aria-label="Carta" class="w-11 h-11 grid place-items-center rounded-2xl bg-ambar-500/25 text-ambar-300 transition hover:bg-ambar-500/40"><i class="fa-solid fa-table-cells-large" aria-hidden="true"></i></a>
+        <a href="#cuenta" title="La cuenta" aria-label="La cuenta" class="w-11 h-11 grid place-items-center rounded-2xl text-selva-200 transition hover:bg-white/10 hover:text-hueso"><i class="fa-solid fa-receipt" aria-hidden="true"></i></a>
+        <a href="#mesas" title="Mesas" aria-label="Mesas" class="w-11 h-11 grid place-items-center rounded-2xl text-selva-200 transition hover:bg-white/10 hover:text-hueso"><i class="fa-solid fa-chair" aria-hidden="true"></i></a>
+        <a href="/logout" title="Salir de la mesa" aria-label="Salir de la mesa" class="mt-auto w-11 h-11 grid place-items-center rounded-2xl text-selva-200 transition hover:bg-alerta/70 hover:text-white"><i class="fa-solid fa-right-from-bracket" aria-hidden="true"></i></a>
+    </nav>
+
+    <div class="flex-1 min-w-0">
+        <header class="flex flex-wrap items-center gap-x-8 gap-y-4 px-1 sm:px-3 py-3">
+            <div class="flex items-center gap-4">
+                {% with logo_class='w-14 h-14 sm:w-16 sm:h-16 shrink-0' %}{% include '_logo.html' %}{% endwith %}
+                <div>
+                    <p class="font-display text-lg leading-none text-selva-200">Recreo Turístico</p>
+                    <p class="font-display text-3xl sm:text-4xl font-semibold leading-tight">La Selva del Prado</p>
                 </div>
-                {% endfor %}
             </div>
-            {% endif %}
+            <div class="text-sm text-selva-200 space-y-1">
+                <p><i class="fa-solid fa-building-columns w-5 text-ambar-300" aria-hidden="true"></i>RUC 10433857009</p>
+                <p><i class="fa-solid fa-location-dot w-5 text-ambar-300" aria-hidden="true"></i>Carretera Tingo María-Monzón, Bella</p>
+            </div>
+            <div class="flex flex-wrap items-center gap-3 ml-auto">
+                <span class="inline-flex items-center gap-2 rounded-xl font-bold px-4 py-2.5 border {{ 'bg-ambar-700 border-ambar-500 text-hueso' if abierta else 'bg-esmeralda-700 border-esmeralda-500 text-white' }}">
+                    <span class="w-2.5 h-2.5 rounded-full {{ 'bg-ambar-300' if abierta else 'bg-esmeralda-300' }}"></span>
+                    Mesa {{ "%02d"|format(mesa_numero) }} ({{ 'Ocupada' if abierta else 'Libre' }})
+                </span>
+                <a href="/admin" class="inline-flex items-center gap-2 rounded-xl border border-ambar-300/50 text-ambar-300 font-semibold px-4 py-2.5 hover:bg-ambar-300/10 transition focus:outline-none focus-visible:ring-2 focus-visible:ring-ambar-300"><i class="fa-solid fa-lock text-sm" aria-hidden="true"></i>Administrador</a>
+                <a href="/logout" class="md:hidden inline-flex items-center gap-2 rounded-xl border border-white/20 px-4 py-2.5 font-semibold"><i class="fa-solid fa-right-from-bracket text-sm" aria-hidden="true"></i>Salir</a>
+            </div>
+        </header>
 
-            {% if bebidas %}
-            <h2>🍹 Bebidas Refrescantes</h2>
-            <div class="grid">
-                {% for item in bebidas %}
-                {% set img_url = url_for('static', filename='uploads/' + item.imagen) if not item.imagen.startswith('http') else item.imagen %}
-                <input type="hidden" name="plato_{{ item.id }}" id="input_{{ item.id }}" value="0">
-                
-                <div class="card" 
-                     data-id="{{ item.id }}" 
-                     data-nombre="{{ item.nombre }}" 
-                     data-desc="{{ item.descripcion }}" 
-                     data-precio="{{ item.precio }}" 
-                     data-img="{{ img_url }}"
-                     onclick="abrirModal(this)">
-                    <span class="badge" id="badge_{{ item.id }}">0</span>
-                    <img src="{{ img_url }}" alt="{{ item.nombre }}">
-                    <div class="card-body">
-                        <h4 class="card-title">{{ item.nombre }}</h4>
-                        <span class="card-price">S/ {{ "%.2f"|format(item.precio) }}</span>
-                    </div>
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% for category, message in messages %}
+                <p role="alert" class="mt-2 rounded-2xl text-white text-sm font-semibold px-4 py-3 {{ 'bg-alerta/90' if category == 'error' else 'bg-esmeralda-700' }}">{{ message }}</p>
+            {% endfor %}
+        {% endwith %}
+
+        <div class="grid gap-4 mt-3 lg:grid-cols-[minmax(0,1fr)_21rem] xl:grid-cols-[minmax(0,1fr)_20rem_10.5rem] items-start">
+            <main id="carta" class="glass rounded-3xl p-4 min-w-0 scroll-mt-4">
+                <div class="flex gap-2 overflow-x-auto scroll-fino pb-3" role="group" aria-label="Categorías">
+                    <button type="button" data-filtro="todas" aria-pressed="true" class="chip shrink-0 rounded-full px-4 py-2 text-sm font-semibold transition"><i class="fa-solid fa-border-all mr-1.5" aria-hidden="true"></i>Categorías</button>
+                    {% for clave, etiqueta, icono, items in [('Comida', 'Comidas', 'fa-bowl-food', comidas), ('Bebida', 'Bebidas', 'fa-martini-glass-citrus', bebidas), ('Golosinas', 'Golosinas', 'fa-candy-cane', golosinas), ('Piscina', 'Piscina', 'fa-person-swimming', piscina)] %}
+                        {% if items %}<button type="button" data-filtro="{{ clave }}" aria-pressed="false" class="chip shrink-0 rounded-full px-4 py-2 text-sm font-semibold transition"><i class="fa-solid {{ icono }} mr-1.5" aria-hidden="true"></i>{{ etiqueta }}</button>{% endif %}
+                    {% endfor %}
                 </div>
-                {% endfor %}
-            </div>
-            {% endif %}
 
-            <!-- NUEVA SECCIÓN: GOLOSINAS -->
-            {% if golosinas %}
-            <h2>🍬 Golosinas y Snacks</h2>
-            <div class="grid">
-                {% for item in golosinas %}
-                {% set img_url = url_for('static', filename='uploads/' + item.imagen) if not item.imagen.startswith('http') else item.imagen %}
-                <input type="hidden" name="plato_{{ item.id }}" id="input_{{ item.id }}" value="0">
-                
-                <div class="card" 
-                     data-id="{{ item.id }}" 
-                     data-nombre="{{ item.nombre }}" 
-                     data-desc="{{ item.descripcion }}" 
-                     data-precio="{{ item.precio }}" 
-                     data-img="{{ img_url }}"
-                     onclick="abrirModal(this)">
-                    <span class="badge" id="badge_{{ item.id }}">0</span>
-                    <img src="{{ img_url }}" alt="{{ item.nombre }}">
-                    <div class="card-body">
-                        <h4 class="card-title">{{ item.nombre }}</h4>
-                        <span class="card-price">S/ {{ "%.2f"|format(item.precio) }}</span>
+                <form action="/enviar-pedido" method="POST" id="form-pedidos">
+                    {% for items in [comidas, bebidas, golosinas, piscina] %}{% for item in items %}
+                    <input type="hidden" name="plato_{{ item.id }}" id="input_{{ item.id }}" value="0">
+                    {% endfor %}{% endfor %}
+                </form>
+
+                {% for clave, titulo, items in [('Comida', 'Comidas Principales', comidas), ('Bebida', 'Bebidas Refrescantes', bebidas), ('Golosinas', 'Golosinas y Snacks', golosinas), ('Piscina', 'Accesos a Piscina', piscina)] %}
+                {% if items %}
+                <section data-categoria="{{ clave }}" class="mt-3 first-of-type:mt-1">
+                    <h2 class="font-display text-3xl mb-3 px-1">{{ titulo }}</h2>
+                    <div class="grid gap-4 grid-cols-2 sm:grid-cols-[repeat(auto-fill,minmax(13rem,1fr))] mb-5">
+                        {% for item in items %}
+                        {% set img_url = url_for('static', filename='uploads/' + item.imagen) if not item.imagen.startswith('http') else item.imagen %}
+                        <article class="plato flex flex-col rounded-3xl bg-selva-900/70 border border-white/10 p-2 min-w-0" data-id="{{ item.id }}" data-nombre="{{ item.nombre }}" data-precio="{{ item.precio }}" data-img="{{ img_url }}">
+                            <div class="relative aspect-[3/2] rounded-2xl overflow-hidden sin-foto">
+                                <img src="{{ img_url }}" alt="{{ item.nombre }}" loading="lazy" class="w-full h-full object-cover" onerror="this.remove()">
+                                {% if session.get('admin_logged_in') %}
+                                <form action="/admin/plato/editar/{{ item.id }}" method="POST" enctype="multipart/form-data" class="absolute top-2 right-2">
+                                    <input type="hidden" name="volver" value="carta">
+                                    <label class="block cursor-pointer rounded-full bg-selva-950/80 backdrop-blur text-hueso text-xs font-semibold px-3 py-2 transition hover:bg-ambar-500 hover:text-selva-950 focus-within:ring-2 focus-within:ring-ambar-300">
+                                        <i class="fa-solid fa-camera mr-1" aria-hidden="true"></i>Subir foto
+                                        <input type="file" name="imagen" accept="image/jpeg,image/png,image/webp" class="sr-only" aria-label="Subir foto de {{ item.nombre }}" onchange="this.form.submit()">
+                                    </label>
+                                </form>
+                                {% endif %}
+                            </div>
+                            <div class="flex flex-col flex-1 px-2 pt-3 pb-2">
+                                <h3 class="font-bold text-lg leading-tight">{{ item.nombre }}</h3>
+                                <p class="tres-lineas text-xs leading-relaxed text-selva-200 mt-1 mb-3 flex-1">{{ item.descripcion or '' }}</p>
+                                <div class="flex flex-wrap items-center justify-between gap-2">
+                                    <span class="font-semibold">S/ {{ "%.2f"|format(item.precio) }}</span>
+                                    <button type="button" data-accion="sumar" data-id="{{ item.id }}" class="btn-agregar rounded-full bg-ambar-300 text-selva-950 text-sm font-bold px-3.5 py-2 hover:bg-hueso active:scale-95 transition focus:outline-none focus-visible:ring-2 focus-visible:ring-hueso"><i class="fa-solid fa-plus mr-1" aria-hidden="true"></i>Agregar</button>
+                                    <div class="contador hidden items-center rounded-full bg-ambar-300 text-selva-950 font-bold">
+                                        <button type="button" data-accion="restar" data-id="{{ item.id }}" aria-label="Quitar uno de {{ item.nombre }}" class="w-9 h-9 rounded-full hover:bg-hueso active:scale-90 transition"><i class="fa-solid fa-minus text-xs" aria-hidden="true"></i></button>
+                                        <span class="cantidad w-6 text-center text-sm">0</span>
+                                        <button type="button" data-accion="sumar" data-id="{{ item.id }}" aria-label="Agregar uno de {{ item.nombre }}" class="w-9 h-9 rounded-full hover:bg-hueso active:scale-90 transition"><i class="fa-solid fa-plus text-xs" aria-hidden="true"></i></button>
+                                    </div>
+                                </div>
+                            </div>
+                        </article>
+                        {% endfor %}
                     </div>
-                </div>
+                </section>
+                {% endif %}
                 {% endfor %}
-            </div>
-            {% endif %}
+                {% if not (comidas or bebidas or golosinas or piscina) %}
+                <p class="py-20 text-center text-selva-200">La carta todavía no tiene productos disponibles.</p>
+                {% endif %}
+            </main>
 
-            <!-- NUEVA SECCIÓN: PISCINA -->
-            {% if piscina %}
-            <h2>🏊‍♂️ Accesos a Piscina</h2>
-            <div class="grid">
-                {% for item in piscina %}
-                {% set img_url = url_for('static', filename='uploads/' + item.imagen) if not item.imagen.startswith('http') else item.imagen %}
-                <input type="hidden" name="plato_{{ item.id }}" id="input_{{ item.id }}" value="0">
-                
-                <div class="card" 
-                     data-id="{{ item.id }}" 
-                     data-nombre="{{ item.nombre }}" 
-                     data-desc="{{ item.descripcion }}" 
-                     data-precio="{{ item.precio }}" 
-                     data-img="{{ img_url }}"
-                     onclick="abrirModal(this)">
-                    <span class="badge" id="badge_{{ item.id }}">0</span>
-                    <img src="{{ img_url }}" alt="{{ item.nombre }}">
-                    <div class="card-body">
-                        <h4 class="card-title">{{ item.nombre }}</h4>
-                        <span class="card-price">S/ {{ "%.2f"|format(item.precio) }}</span>
+            <aside id="cuenta" aria-label="La cuenta" class="glass rounded-3xl shadow-alta flex flex-col lg:sticky lg:top-4 lg:max-h-[calc(100vh-2rem)] scroll-mt-4">
+                <div class="px-5 pt-5 pb-3 border-b border-white/10">
+                    <h2 class="font-bold text-2xl">La Cuenta</h2>
+                </div>
+                <div class="overflow-y-auto scroll-fino flex-1 px-5 min-h-[6rem]">
+                    <div id="por-enviar" class="hidden pt-3">
+                        <p class="text-[11px] font-bold tracking-[.2em] uppercase text-ambar-300">Por enviar</p>
+                        <ul id="lineas" class="divide-y divide-white/10"></ul>
                     </div>
+                    {% if abierta %}
+                    <div class="pt-3 pb-1">
+                        <p class="text-[11px] font-bold tracking-[.2em] uppercase text-esmeralda-300">Ya en cocina</p>
+                        <ul class="divide-y divide-white/10">
+                            {% for detalle in pedido_actual.detalles %}
+                            <li class="flex items-center gap-3 py-2.5 text-sm">
+                                <span class="font-bold text-ambar-300 w-7 shrink-0">{{ detalle.cantidad }}×</span>
+                                <span class="flex-1 min-w-0"><span class="block font-semibold truncate">{{ detalle.plato.nombre if detalle.plato else 'Producto eliminado' }}</span><span class="text-xs text-selva-200">{{ detalle.hora_pedido.strftime('%I:%M %p') }}</span></span>
+                                <span class="whitespace-nowrap">S/ {{ "%.2f"|format(detalle.cantidad * detalle.precio_unitario) }}</span>
+                            </li>
+                            {% endfor %}
+                        </ul>
+                    </div>
+                    {% else %}
+                    <p id="cuenta-vacia" class="py-8 text-center text-sm text-selva-200"><i class="fa-solid fa-utensils block text-2xl text-ambar-500 mb-3" aria-hidden="true"></i>Agrega algo de la carta para empezar.</p>
+                    {% endif %}
                 </div>
-                {% endfor %}
-            </div>
-            {% endif %}
+                <div class="px-5 py-4 border-t border-white/10 space-y-1.5 text-sm">
+                    {% if abierta %}<div class="flex justify-between"><span>Cuenta abierta</span><span>S/ {{ "%.2f"|format(pedido_actual.total) }}</span></div>{% endif %}
+                    <div class="flex justify-between"><span>Por enviar</span><span id="subtotal">S/ 0.00</span></div>
+                    <div class="flex items-baseline justify-between pt-2"><span class="font-bold">Total</span><span id="total" class="font-display text-4xl font-semibold leading-none">S/ {{ "%.2f"|format(pedido_actual.total if abierta else 0) }}</span></div>
+                    <button type="submit" form="form-pedidos" id="btn-enviar" disabled class="brillo mt-3 w-full rounded-2xl bg-ambar-500 text-selva-950 font-bold py-3.5 hover:bg-ambar-300 focus:outline-none focus-visible:ring-4 focus-visible:ring-hueso"><i class="fa-solid fa-fire-burner mr-2" aria-hidden="true"></i>Enviar a cocina</button>
+                    {% if abierta %}
+                    <a href="/admin?mesa={{ mesa_numero }}" class="brillo block mt-2 w-full rounded-2xl bg-esmeralda-700 text-white text-center font-bold text-lg py-3.5 ring-2 ring-ambar-300 hover:bg-esmeralda-500 focus:outline-none focus-visible:ring-4"><i class="fa-solid fa-cash-register mr-2" aria-hidden="true"></i>Cobrar (S/ {{ "%.2f"|format(pedido_actual.total) }})</a>
+                    {% endif %}
+                </div>
+            </aside>
 
-            <div class="sticky-footer">
-                <button type="submit" class="btn-enviar">Cocinar mi Pedido 👨‍🍳</button>
-            </div>
-        </form>
-    </div>
-
-    <div id="platoModal" class="modal">
-        <div class="modal-content">
-            <span class="close" onclick="cerrarModal()">&times;</span>
-            <img id="modal-img" class="modal-img" src="" alt="">
-            <h3 id="modal-title" class="modal-title"></h3>
-            <p id="modal-desc" class="modal-desc"></p>
-            <div id="modal-price" class="modal-price"></div>
-            
-            <div class="qty-controls">
-                <button type="button" class="btn-qty" onclick="cambiarCantidad(-1)">-</button>
-                <input type="number" id="modal-qty" class="input-qty" value="0" readonly>
-                <button type="button" class="btn-qty" onclick="cambiarCantidad(1)">+</button>
-            </div>
-            
-            <button type="button" class="btn-confirmar" onclick="guardarCantidad()">Añadir al pedido</button>
+            <aside id="mesas" aria-label="Mesas" class="glass rounded-3xl p-4 lg:col-span-2 xl:col-span-1 xl:sticky xl:top-4 xl:max-h-[calc(100vh-2rem)] overflow-y-auto scroll-fino scroll-mt-4">
+                <h2 class="font-display text-2xl text-center mb-3">{{ mesas|length }} Mesas</h2>
+                <div class="grid grid-cols-[repeat(auto-fill,minmax(3.75rem,1fr))] xl:grid-cols-2 gap-x-2 gap-y-3">
+                    {% for mesa in mesas %}
+                    {% set ocupada = mesa.pedidos | selectattr("estado", "equalto", "Pendiente") | list %}
+                    {% set clases = 'bg-ambar-700 border-ambar-500' if ocupada else 'bg-esmeralda-700 border-esmeralda-500' %}
+                    {% if mesa.numero == mesa_numero %}
+                    <div class="text-center" aria-current="true">
+                        <span class="block rounded-xl border-2 font-bold text-lg py-2 ring-2 ring-hueso ring-offset-2 ring-offset-selva-900 {{ clases }}">{{ "%02d"|format(mesa.numero) }}</span>
+                        <span class="block text-[11px] mt-1 font-semibold">{{ 'Ocupada' if ocupada else 'Libre' }}</span>
+                    </div>
+                    {% else %}
+                    <a href="/login-mesa?mesa={{ mesa.numero }}" title="Abrir Mesa {{ mesa.numero }}" class="text-center group focus:outline-none">
+                        <span class="block rounded-xl border-2 font-bold text-lg py-2 transition group-hover:-translate-y-0.5 group-hover:brightness-125 group-focus-visible:ring-2 group-focus-visible:ring-hueso {{ clases }}">{{ "%02d"|format(mesa.numero) }}</span>
+                        <span class="block text-[11px] mt-1 text-selva-200">{{ 'Ocupada' if ocupada else 'Libre' }}</span>
+                    </a>
+                    {% endif %}
+                    {% endfor %}
+                </div>
+            </aside>
         </div>
     </div>
+</div>
 
-    <script>
-        let platoActivoId = null;
+<a href="#cuenta" class="lg:hidden fixed z-20 bottom-4 inset-x-4 flex items-center justify-between rounded-full bg-selva-800 border border-ambar-500/60 text-hueso px-6 py-4 shadow-alta">
+    <span class="font-bold"><i class="fa-solid fa-receipt mr-2 text-ambar-300" aria-hidden="true"></i>Ver cuenta <span id="barra-cantidad" class="ml-1 inline-block min-w-6 rounded-full bg-ambar-500 text-selva-950 text-sm px-2 py-0.5 text-center">0</span></span>
+    <span id="barra-total" class="font-display text-2xl">S/ {{ "%.2f"|format(pedido_actual.total if abierta else 0) }}</span>
+</a>
 
-        function abrirModal(elemento) {
-            platoActivoId = elemento.getAttribute('data-id');
-            document.getElementById('modal-title').innerText = elemento.getAttribute('data-nombre');
-            document.getElementById('modal-desc').innerText = elemento.getAttribute('data-desc');
-            document.getElementById('modal-price').innerText = 'S/ ' + parseFloat(elemento.getAttribute('data-precio')).toFixed(2);
-            document.getElementById('modal-img').src = elemento.getAttribute('data-img');
-            
-            let cantidadActual = document.getElementById('input_' + platoActivoId).value;
-            document.getElementById('modal-qty').value = cantidadActual;
-            
-            document.getElementById('platoModal').style.display = 'flex';
-        }
+<script>
+    const CLAVE_BORRADOR = 'selva.pedido.mesa{{ mesa_numero }}';
+    const TOTAL_ABIERTO = {{ (pedido_actual.total if abierta else 0)|tojson }};
+    const MAX_CANTIDAD = 200;
+    const platos = {};
+    document.querySelectorAll('.plato').forEach((card) => {
+        platos[card.dataset.id] = { card, nombre: card.dataset.nombre, precio: parseFloat(card.dataset.precio) };
+    });
+    let cantidades = {};
 
-        function cerrarModal() {
-            document.getElementById('platoModal').style.display = 'none';
-        }
+    const moneda = (n) => 'S/ ' + n.toFixed(2);
+    const $ = (id) => document.getElementById(id);
 
-        function cambiarCantidad(cambio) {
-            let input = document.getElementById('modal-qty');
-            let nuevaCantidad = parseInt(input.value) + cambio;
-            if (nuevaCantidad >= 0 && nuevaCantidad <= 200) {
-                input.value = nuevaCantidad;
-            }
-        }
+    function guardarBorrador() {
+        try { localStorage.setItem(CLAVE_BORRADOR, JSON.stringify(cantidades)); } catch (e) { /* solo es una comodidad */ }
+    }
 
-        function guardarCantidad() {
-            let cantidadFinal = document.getElementById('modal-qty').value;
-            document.getElementById('input_' + platoActivoId).value = cantidadFinal;
-            
-            let badge = document.getElementById('badge_' + platoActivoId);
-            if (parseInt(cantidadFinal) > 0) {
-                badge.innerText = "x" + cantidadFinal;
-                badge.style.display = 'inline-block';
-            } else {
-                badge.style.display = 'none';
-            }
-            cerrarModal();
-        }
-    </script>
+    function cargarBorrador() {
+        try {
+            const guardado = JSON.parse(localStorage.getItem(CLAVE_BORRADOR)) || {};
+            Object.entries(guardado).forEach(([id, cant]) => { if (platos[id] && cant > 0) cantidades[id] = Math.min(cant, MAX_CANTIDAD); });
+        } catch (e) { cantidades = {}; }
+    }
+
+    function fijarCantidad(id, cant) {
+        if (cant < 0 || cant > MAX_CANTIDAD) return;
+        if (cant === 0) delete cantidades[id]; else cantidades[id] = cant;
+        guardarBorrador();
+        pintar();
+    }
+
+    function pintar() {
+        let subtotal = 0, piezas = 0;
+        const lineas = $('lineas');
+        lineas.replaceChildren();
+        Object.entries(platos).forEach(([id, plato]) => {
+            const cant = cantidades[id] || 0;
+            $('input_' + id).value = cant;
+            plato.card.classList.toggle('en-cuenta', cant > 0);
+            plato.card.querySelector('.btn-agregar').classList.toggle('hidden', cant > 0);
+            plato.card.querySelector('.contador').classList.toggle('hidden', cant === 0);
+            plato.card.querySelector('.contador').classList.toggle('flex', cant > 0);
+            plato.card.querySelector('.cantidad').textContent = cant;
+            if (!cant) return;
+            subtotal += cant * plato.precio;
+            piezas += cant;
+            const li = document.createElement('li');
+            li.className = 'fila-cuenta flex items-center gap-3 py-2.5 text-sm';
+            const img = document.createElement('img');
+            img.src = plato.card.dataset.img;
+            img.alt = '';
+            img.className = 'w-11 h-11 rounded-xl object-cover shrink-0 sin-foto';
+            const texto = document.createElement('div');
+            texto.className = 'flex-1 min-w-0';
+            const nombre = document.createElement('p');
+            nombre.className = 'font-semibold truncate';
+            nombre.textContent = plato.nombre;
+            const precio = document.createElement('p');
+            precio.className = 'text-xs text-selva-200';
+            precio.textContent = moneda(cant * plato.precio);
+            texto.append(nombre, precio);
+            const botones = document.createElement('div');
+            botones.className = 'flex items-center rounded-full border border-white/20';
+            [['restar', 'fa-minus', 'Quitar uno de '], ['sumar', 'fa-plus', 'Agregar uno de ']].forEach(([accion, icono, etiqueta], i) => {
+                const b = document.createElement('button');
+                b.type = 'button';
+                b.dataset.accion = accion;
+                b.dataset.id = id;
+                b.setAttribute('aria-label', etiqueta + plato.nombre);
+                b.className = 'w-7 h-7 rounded-full text-[10px] hover:bg-white/15 transition';
+                b.innerHTML = `<i class="fa-solid ${icono}" aria-hidden="true"></i>`;
+                botones.append(b);
+                if (i === 0) {
+                    const n = document.createElement('span');
+                    n.className = 'w-5 text-center text-xs font-bold';
+                    n.textContent = cant;
+                    botones.append(n);
+                }
+            });
+            li.append(img, texto, botones);
+            lineas.append(li);
+        });
+        const total = TOTAL_ABIERTO + subtotal;
+        $('por-enviar').classList.toggle('hidden', piezas === 0);
+        if ($('cuenta-vacia')) $('cuenta-vacia').classList.toggle('hidden', piezas > 0);
+        $('subtotal').textContent = moneda(subtotal);
+        $('total').textContent = moneda(total);
+        $('barra-total').textContent = moneda(total);
+        $('barra-cantidad').textContent = piezas;
+        $('btn-enviar').disabled = piezas === 0;
+    }
+
+    document.addEventListener('click', (e) => {
+        const boton = e.target.closest('[data-accion]');
+        if (!boton) return;
+        const id = boton.dataset.id;
+        const antes = cantidades[id] || 0;
+        fijarCantidad(id, antes + (boton.dataset.accion === 'sumar' ? 1 : -1));
+        const contador = platos[id].card.querySelector('.cantidad');
+        contador.classList.remove('pulso');
+        void contador.offsetWidth;
+        contador.classList.add('pulso');
+        // El botón Agregar se oculta o reaparece: el foco no debe perderse
+        if (boton.classList.contains('btn-agregar')) platos[id].card.querySelector('.contador [data-accion="sumar"]').focus();
+        else if (!cantidades[id] && boton.closest('.contador')) platos[id].card.querySelector('.btn-agregar').focus();
+    });
+
+    function filtrar(valor) {
+        document.querySelectorAll('.chip').forEach((chip) => {
+            const activo = chip.dataset.filtro === valor;
+            chip.setAttribute('aria-pressed', activo);
+            chip.classList.toggle('bg-ambar-300', activo);
+            chip.classList.toggle('text-selva-950', activo);
+            chip.classList.toggle('bg-white/10', !activo);
+            chip.classList.toggle('hover:bg-white/20', !activo);
+        });
+        document.querySelectorAll('[data-categoria]').forEach((s) => {
+            s.classList.toggle('hidden', valor !== 'todas' && s.dataset.categoria !== valor);
+        });
+    }
+    document.querySelectorAll('.chip').forEach((chip) => chip.addEventListener('click', () => filtrar(chip.dataset.filtro)));
+
+    $('form-pedidos').addEventListener('submit', () => {
+        try { localStorage.removeItem(CLAVE_BORRADOR); } catch (e) { /* sin borrador */ }
+    });
+
+    filtrar('todas');
+    cargarBorrador();
+    pintar();
+</script>
 </body>
 </html>

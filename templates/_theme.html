@@ -1,0 +1,55 @@
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,500;0,600;0,700;1,500&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
+<script src="https://cdn.tailwindcss.com"></script>
+<script>
+  tailwind.config = {
+    theme: { extend: {
+      colors: {
+        selva: { 950: '#07150f', 900: '#0c241a', 800: '#123326', 700: '#1c4a38', 600: '#256148', 500: '#47806a', 200: '#c6d6cc', 100: '#e4ebe5' },
+        ambar: { 800: '#7a4a12', 700: '#8d5617', 600: '#ad6e25', 500: '#c98a3c', 300: '#e8c790' },
+        esmeralda: { 700: '#0f7a52', 500: '#1f9d6b', 300: '#6fd8a9' },
+        hueso: '#f6f3ec', papel: '#fffdf9', tinta: '#15211b', alerta: '#a33222'
+      },
+      fontFamily: {
+        display: ['"Cormorant Garamond"', 'Georgia', 'serif'],
+        sans: ['Manrope', 'system-ui', 'sans-serif']
+      },
+      boxShadow: {
+        suave: '0 1px 2px rgba(12,36,26,.05), 0 14px 34px -14px rgba(12,36,26,.2)',
+        alta: '0 2px 6px rgba(0,0,0,.18), 0 32px 64px -24px rgba(0,0,0,.65)',
+        oro: '0 0 0 2px #c98a3c, 0 14px 30px -10px rgba(201,138,60,.55)'
+      }
+    } }
+  };
+</script>
+<style>
+  html { scroll-behavior: smooth; }
+  .selva-bg { background-color: #07150f; background-image:
+    radial-gradient(ellipse 60% 70% at 92% -5%, rgba(201,138,60,.2), transparent 70%),
+    radial-gradient(ellipse 55% 80% at 0% 105%, rgba(37,97,72,.75), transparent 70%),
+    linear-gradient(160deg, #0c241a, #07150f 70%); background-attachment: fixed; }
+  .hoja { position: absolute; pointer-events: none; color: #47806a; }
+  .hoja svg { width: 100%; height: 100%; fill: none; stroke: currentColor; stroke-width: .8; }
+  .hoja-mece { transform-origin: 50% 100%; animation: mecer 12s ease-in-out infinite alternate; }
+  @keyframes mecer { from { transform: rotate(var(--giro, 0deg)) translateY(0); } to { transform: rotate(calc(var(--giro, 0deg) + 4deg)) translateY(-8px); } }
+  .glass { background: linear-gradient(155deg, rgba(255,255,255,.11), rgba(255,255,255,.035)); border: 1px solid rgba(255,255,255,.13); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px); }
+  .entrada { animation: entrada .6s cubic-bezier(.2,.7,.2,1) backwards; }
+  @keyframes entrada { from { opacity: 0; transform: translateY(14px); } }
+  .campo { width: 100%; border-radius: 1rem; padding: .85rem 1rem; color: #15211b; background: #fff; border: 1px solid rgba(21,33,27,.16); transition: border-color .2s, box-shadow .2s, transform .2s; }
+  .campo:focus { outline: none; border-color: #c98a3c; box-shadow: 0 0 0 4px rgba(201,138,60,.25); }
+  .campo-oscuro { background: rgba(255,255,255,.07); border-color: rgba(255,255,255,.2); color: #f6f3ec; }
+  .campo-oscuro::placeholder { color: #c6d6cc; opacity: .75; }
+  .campo-oscuro option { color: #15211b; }
+  .brillo { position: relative; overflow: hidden; transition: transform .25s, box-shadow .25s, background-color .25s; }
+  .brillo::after { content: ""; position: absolute; inset: 0 auto 0 -60%; width: 45%; transform: skewX(-20deg); background: linear-gradient(90deg, transparent, rgba(255,255,255,.45), transparent); transition: left .7s ease; }
+  .brillo:hover::after { left: 120%; }
+  .brillo:hover { transform: translateY(-2px); }
+  .brillo:active { transform: translateY(0) scale(.98); }
+  .brillo:disabled { opacity: .45; cursor: not-allowed; transform: none; }
+  .brillo:disabled::after { display: none; }
+  @media (prefers-reduced-motion: reduce) {
+    html { scroll-behavior: auto; }
+    *, *::before, *::after { animation-duration: .01ms !important; animation-delay: 0s !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important; }
+  }
+</style>

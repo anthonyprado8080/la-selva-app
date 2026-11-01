@@ -4,44 +4,59 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Ingreso Mesa - La Selva del Prado</title>
+    {% include '_theme.html' %}
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap');
-        body { margin: 0; font-family: 'Poppins', sans-serif; background-color: #f4f7f6; display: flex; justify-content: center; align-items: center; height: 100vh; }
-        .login-card { background: white; padding: 40px 30px; border-radius: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.05); width: 100%; max-width: 350px; text-align: center; }
-        h2 { color: #2c3e50; margin-bottom: 25px; }
-        select, input { width: 100%; padding: 12px; margin-bottom: 20px; border: 1px solid #e0e0e0; border-radius: 10px; font-family: 'Poppins', sans-serif; font-size: 1rem; box-sizing: border-box; }
-        button { width: 100%; background-color: #1abc9c; color: white; border: none; padding: 15px; border-radius: 10px; font-size: 1.1rem; font-weight: 600; cursor: pointer; transition: 0.3s; box-shadow: 0 4px 15px rgba(26, 188, 156, 0.3); }
-        button:hover { background-color: #16a085; transform: translateY(-2px); }
-        .flash { color: #e74c3c; margin-bottom: 15px; font-size: 0.9rem; }
-        
-        /* ESTILO PARA EL BOTÓN DE REGRESAR */
-        .btn-volver { display: inline-block; margin-top: 20px; color: #7f8c8d; text-decoration: none; font-size: 0.9rem; transition: color 0.3s; }
-        .btn-volver:hover { color: #1abc9c; text-decoration: underline; }
+        .icono-foco:focus-within .icono { color: #e8c790; transform: scale(1.15) rotate(-6deg); }
+        .icono { transition: transform .25s, color .25s; }
     </style>
 </head>
-<body>
-    <div class="login-card">
-        <h2>🍽️ Abre tu Mesa</h2>
+<body class="selva-bg min-h-screen text-hueso font-sans antialiased overflow-x-hidden flex items-center justify-center p-4 py-10">
+    <div class="fixed -left-24 -bottom-24 w-[28rem] h-[28rem] rounded-full bg-esmeralda-700/30 blur-3xl" aria-hidden="true"></div>
+    <div class="fixed -right-24 -top-24 w-[26rem] h-[26rem] rounded-full bg-ambar-500/20 blur-3xl" aria-hidden="true"></div>
+
+    <main class="glass entrada relative w-full max-w-md rounded-[2rem] p-7 sm:p-9 shadow-alta">
+        <div class="text-center">
+            {% with logo_class='w-16 h-16 mx-auto' %}{% include '_logo.html' %}{% endwith %}
+            <p class="mt-4 text-xs font-semibold tracking-[.3em] uppercase text-ambar-300">La Selva del Prado</p>
+            <h1 class="font-display text-5xl mt-2">Abre tu mesa</h1>
+        </div>
+
         {% with messages = get_flashed_messages(with_categories=true) %}
-            {% if messages %}
-                {% for category, message in messages %}
-                    <div class="flash">{{ message }}</div>
-                {% endfor %}
-            {% endif %}
+            {% for category, message in messages %}
+                <p role="alert" class="mt-5 rounded-2xl bg-alerta/90 text-white text-sm font-semibold px-4 py-3"><i class="fa-solid fa-circle-exclamation mr-2" aria-hidden="true"></i>{{ message }}</p>
+            {% endfor %}
         {% endwith %}
-        <form action="/login-mesa" method="POST">
-            <select name="numero_mesa" required>
-                <option value="" disabled selected>Selecciona tu Mesa</option>
-                {% for mesa in mesas %}
-                    <option value="{{ mesa.numero }}">Mesa {{ mesa.numero }}</option>
-                {% endfor %}
-            </select>
-            <input type="password" name="password" placeholder="Contraseña asignada" required>
-            <button type="submit">Ver la Carta</button>
+
+        <form action="/login-mesa" method="POST" class="mt-6 space-y-5">
+            <div class="icono-foco">
+                <label for="numero_mesa" class="block text-sm font-semibold mb-2"><i class="icono fa-solid fa-chair mr-2 text-ambar-500" aria-hidden="true"></i>Mesa</label>
+                <select id="numero_mesa" name="numero_mesa" required class="campo campo-oscuro font-semibold">
+                    <option value="" disabled selected>Selecciona tu mesa</option>
+                    {% for mesa in mesas %}
+                        {% set abierta = mesa.pedidos | selectattr("estado", "equalto", "Pendiente") | list %}
+                        <option value="{{ mesa.numero }}">Mesa {{ "%02d"|format(mesa.numero) }} · {{ 'Ocupada' if abierta else 'Libre' }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="icono-foco">
+                <label for="password" class="block text-sm font-semibold mb-2"><i class="icono fa-solid fa-key mr-2 text-ambar-500" aria-hidden="true"></i>Contraseña asignada</label>
+                <input id="password" type="password" name="password" required autocomplete="off" class="campo campo-oscuro">
+            </div>
+            <button type="submit" class="brillo w-full rounded-2xl bg-ambar-500 text-selva-950 font-bold py-4 hover:bg-ambar-300 focus:outline-none focus-visible:ring-4 focus-visible:ring-hueso">
+                Ver la Carta <i class="fa-solid fa-arrow-right ml-2" aria-hidden="true"></i>
+            </button>
         </form>
-        
-        <!-- ENLACE PARA REGRESAR -->
-        <a href="/" class="btn-volver">⬅ Volver al inicio</a>
-    </div>
+
+        <a href="/" class="block text-center mt-6 text-sm text-selva-200 hover:text-ambar-300 transition"><i class="fa-solid fa-arrow-left mr-2" aria-hidden="true"></i>Volver al inicio</a>
+    </main>
+
+    <script>
+        // Desde la carta se puede pedir otra mesa con /login-mesa?mesa=N
+        const mesaPedida = new URLSearchParams(location.search).get('mesa');
+        if (mesaPedida) {
+            document.getElementById('numero_mesa').value = mesaPedida;
+            document.getElementById('password').focus();
+        }
+    </script>
 </body>
 </html>

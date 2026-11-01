@@ -4,96 +4,103 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Boleta - La Selva del Prado</title>
+    {% include '_theme.html' %}
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Courier+Prime&family=Poppins:wght@400;600&display=swap');
-        body { font-family: 'Courier Prime', monospace; background-color: #e0e0e0; display: flex; flex-direction: column; align-items: center; margin-top: 40px; padding-bottom: 40px;}
-        .ticket { background-color: white; width: 320px; padding: 25px; box-shadow: 0 10px 20px rgba(0,0,0,0.1); color: #000; }
-        .header { text-align: center; margin-bottom: 20px; border-bottom: 1px dashed #000; padding-bottom: 15px; }
-        .header h2 { margin: 0; font-size: 20px; text-transform: uppercase; }
-        .header p { margin: 4px 0 0 0; font-size: 12px; }
-        .info { font-size: 13px; margin-bottom: 15px; border-bottom: 1px dashed #000; padding-bottom: 15px; }
-        .info p { margin: 4px 0; display: flex; justify-content: space-between; }
-        .items { width: 100%; font-size: 13px; border-collapse: collapse; margin-bottom: 15px; }
-        .items th, .items td { padding: 6px 0; }
-        .items th { border-bottom: 1px solid #000; text-align: left; }
-        .items .price { text-align: right; }
-        .totals { border-top: 1px dashed #000; padding-top: 15px; font-size: 16px; font-weight: bold; }
-        .totals .row { display: flex; justify-content: space-between; margin-bottom: 5px;}
-        .footer { text-align: center; margin-top: 25px; font-size: 12px; }
-        .actions { margin-top: 30px; display: flex; flex-direction: column; gap: 15px; font-family: 'Poppins', sans-serif; width: 320px;}
-        .btn { padding: 15px; border: none; cursor: pointer; font-weight: 600; border-radius: 8px; font-size: 1rem; text-decoration: none; color: white; text-align: center; display: flex; justify-content: center; align-items: center; gap: 10px; transition: 0.3s; box-sizing: border-box; width: 100%;}
-        .btn-print { background-color: #2c3e50; } .btn-print:hover { background-color: #1a252f; transform: translateY(-2px); }
-        .btn-download { background-color: #f39c12; } .btn-download:hover { background-color: #e67e22; transform: translateY(-2px); }
-        .btn-back { background-color: #1abc9c; } .btn-back:hover { background-color: #16a085; }
+        .ticket { position: relative; width: 100%; background: #fffef9; color: #000; font-family: "Courier New", Courier, monospace; font-size: 13px; line-height: 1.45; }
+        .ticket::before, .ticket::after { content: ""; position: absolute; left: 0; right: 0; height: 7px; background-size: 14px 7px; background-repeat: repeat-x; }
+        .ticket::before { top: -7px; background-image: conic-gradient(from 135deg at top, #fffef9 90deg, transparent 0); }
+        .ticket::after { bottom: -7px; background-image: conic-gradient(from -45deg at bottom, #fffef9 90deg, transparent 0); }
+        .ticket p { margin: 0; }
+        .t-regla { border: 0; border-top: 1px dashed #000; margin: .65em 0; }
+        .t-fila { display: flex; justify-content: space-between; gap: .75em; }
+        .t-fila > :last-child { text-align: right; white-space: nowrap; }
+        .t-centro { text-align: center; }
+        .t-negrita { font-weight: 700; }
+        .t-total { font-size: 1.3em; font-weight: 700; }
+        .t-chico { font-size: .85em; }
+
+        /* Impresora térmica de 58 mm: el largo de la página se fija en imprimirBoleta() */
         @media print {
-            body { background-color: white; margin: 0; padding: 0; }
-            .actions { display: none; }
-            .ticket { box-shadow: none; width: 100%; max-width: 300px; margin: 0; padding: 0; }
+            @page { margin: 0; }
+            html, body { margin: 0 !important; padding: 0 !important; background: #fff !important; display: block !important; min-height: 0 !important; }
+            .no-print { display: none !important; }
+            main, #marco { display: block !important; margin: 0 !important; padding: 0 !important; background: none !important; border: 0 !important; box-shadow: none !important; backdrop-filter: none !important; max-width: none !important; animation: none !important; opacity: 1 !important; transform: none !important; }
+            #boleta-ticket { width: 48mm; margin: 0 auto; padding: 0; background: #fff !important; font-size: 8.5pt; line-height: 1.3; font-weight: 700; }
+            #boleta-ticket * { color: #000 !important; background: transparent !important; }
+            .ticket::before, .ticket::after { display: none !important; }
         }
     </style>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 </head>
-<body>
-    <div class="ticket" id="boleta-ticket">
-        <div class="header">
-            <h2>La Selva del Prado</h2>
-            <p>RUC: 10433857009</p>
-            <p>Carretera Tingo María-Monzón, Centro Poblado Bella, Tingo María / Centro Poblado de Bella</p>
+<body class="selva-bg min-h-screen font-sans antialiased px-4 py-10">
+    <main class="entrada max-w-4xl mx-auto grid gap-10 md:grid-cols-[1fr_24rem] md:items-center md:min-h-[85vh]">
+        <div class="no-print text-hueso text-center md:text-left">
+            <span class="inline-grid place-items-center w-14 h-14 rounded-2xl bg-esmeralda-700 text-xl"><i class="fa-solid fa-receipt" aria-hidden="true"></i></span>
+            <h1 class="font-display text-5xl sm:text-6xl leading-none mt-5">Boleta <em class="text-ambar-300">lista</em></h1>
+            <p class="text-selva-200 mt-4">Mesa {{ "%02d"|format(pedido.mesa_asignada.numero) }} · Ticket {{ "%06d"|format(pedido.id) }}</p>
+            <div class="grid gap-3 mt-8 max-w-sm mx-auto md:mx-0">
+                <button type="button" onclick="imprimirBoleta()" class="brillo rounded-2xl bg-ambar-500 text-selva-950 font-bold py-4 hover:bg-ambar-300 focus:outline-none focus-visible:ring-4 focus-visible:ring-hueso"><i class="fa-solid fa-print mr-2" aria-hidden="true"></i>Imprimir Boleta</button>
+                <button type="button" onclick="descargarBoleta()" class="rounded-2xl border border-ambar-500 text-ambar-300 font-bold py-4 hover:bg-ambar-500/10 transition focus:outline-none focus-visible:ring-4 focus-visible:ring-ambar-300"><i class="fa-solid fa-download mr-2" aria-hidden="true"></i>Descargar (Imagen)</button>
+                <a href="/admin" class="rounded-2xl bg-white/10 border border-white/20 font-bold py-4 text-center hover:bg-white/15 transition focus:outline-none focus-visible:ring-4 focus-visible:ring-ambar-300"><i class="fa-solid fa-plus mr-2" aria-hidden="true"></i>Nuevo Pedido</a>
+            </div>
         </div>
-        <div class="info">
-            <p><span>TICKET #:</span> <span>00{{ pedido.id }}</span></p>
-            <p><span>FECHA:</span> <span>{{ pedido.fecha_hora.strftime('%d/%m/%Y %H:%M') }}</span></p>
-            <p><span>MESA:</span> <span>{{ pedido.mesa_asignada.numero }}</span></p>
-            <p><span>PAGO:</span> <span>{{ pedido.metodo_pago }}</span></p>
-        </div>
-        <table class="items">
-            <thead>
-                <tr>
-                    <th>Cant</th>
-                    <th>Descripción</th>
-                    <th class="price">Importe</th>
-                </tr>
-            </thead>
-            <tbody>
+
+        <div id="marco" class="glass rounded-[2rem] p-6 sm:p-8 shadow-alta">
+            <article class="ticket px-5 py-6" id="boleta-ticket">
+                <div class="t-centro">
+                    <p class="t-negrita">RECREO TURÍSTICO LA SELVA DEL PRADO</p>
+                    <p>RUC: 10433857009</p>
+                    <p class="t-chico">Carretera Tingo María-Monzón, Centro Poblado Bella, Tingo María</p>
+                </div>
+                <hr class="t-regla">
+                <div class="t-fila"><span>TICKET #</span><span>{{ "%06d"|format(pedido.id) }}</span></div>
+                <div class="t-fila"><span>FECHA</span><span>{{ pedido.fecha_hora.strftime('%d/%m/%Y %H:%M') }}</span></div>
+                <div class="t-fila"><span>MESA</span><span>{{ pedido.mesa_asignada.numero }}</span></div>
+                <div class="t-fila"><span>PAGO</span><span>{{ pedido.metodo_pago }}</span></div>
+                <hr class="t-regla">
+                <p class="t-negrita">CONSUMO</p>
                 {% for detalle in pedido.detalles %}
-                <tr>
-                    <td>{{ detalle.cantidad }}</td>
-                    <td>{{ detalle.plato.nombre }}</td>
-                    <td class="price">S/ {{ "%.2f"|format(detalle.precio_unitario * detalle.cantidad) }}</td>
-                </tr>
+                <div>
+                    <p>{{ detalle.plato.nombre if detalle.plato else 'Producto eliminado' }}</p>
+                    <div class="t-fila"><span>{{ detalle.cantidad }} x {{ "%.2f"|format(detalle.precio_unitario) }}</span><span>{{ "%.2f"|format(detalle.precio_unitario * detalle.cantidad) }}</span></div>
+                </div>
                 {% endfor %}
-            </tbody>
-        </table>
-        <div class="totals">
-            <div class="row">
-                <span>TOTAL A PAGAR:</span>
-                <span>S/ {{ "%.2f"|format(pedido.total) }}</span>
-            </div>
-            {% if pedido.metodo_pago == 'Efectivo' and pedido.monto_recibido > 0 %}
-            <div class="row" style="font-size: 13px; font-weight: normal; margin-top: 10px;">
-                <span>Efectivo recibido:</span>
-                <span>S/ {{ "%.2f"|format(pedido.monto_recibido) }}</span>
-            </div>
-            <div class="row" style="font-size: 14px; font-weight: normal;">
-                <span>VUELTO:</span>
-                <span>S/ {{ "%.2f"|format(pedido.vuelto) }}</span>
-            </div>
-            {% endif %}
+                <hr class="t-regla">
+                <div class="t-fila t-total"><span>TOTAL</span><span>S/ {{ "%.2f"|format(pedido.total) }}</span></div>
+                {% if pedido.metodo_pago == 'Efectivo' and pedido.monto_recibido > 0 %}
+                <div class="t-fila"><span>Recibido</span><span>S/ {{ "%.2f"|format(pedido.monto_recibido) }}</span></div>
+                <div class="t-fila t-negrita"><span>VUELTO</span><span>S/ {{ "%.2f"|format(pedido.vuelto) }}</span></div>
+                {% endif %}
+                <hr class="t-regla">
+                <p class="t-centro">¡Gracias por su preferencia!</p>
+                <p class="t-centro t-chico">Vuelva pronto a La Selva del Prado</p>
+            </article>
         </div>
-        <div class="footer">
-            <p>¡Gracias por su preferencia!</p>
-            <p>Vuelva pronto a La Selva del Prado</p>
-        </div>
-    </div>
-    <div class="actions">
-        <button class="btn btn-print" onclick="window.print()">🖨️ Imprimir Boleta</button>
-        <button class="btn btn-download" onclick="descargarBoleta()">⬇️ Descargar (Imagen)</button>
-        <a href="/admin" class="btn btn-back">⬅ Volver al Admin</a>
-    </div>
+    </main>
+
     <script>
+        // Chrome no admite alto "auto" en @page: se mide el ticket para no gastar papel en blanco
+        function imprimirBoleta() {
+            const copia = document.getElementById('boleta-ticket').cloneNode(true);
+            copia.removeAttribute('id');
+            copia.className = 'ticket';
+            copia.style.cssText = 'position:absolute;left:-9999px;top:0;width:48mm;padding:0;font-size:8.5pt;line-height:1.3;font-weight:700';
+            document.body.appendChild(copia);
+            const altoMm = Math.ceil(copia.offsetHeight * 25.4 / 96) + 8;
+            copia.remove();
+            let estilo = document.getElementById('tamano-pagina');
+            if (!estilo) {
+                estilo = document.createElement('style');
+                estilo.id = 'tamano-pagina';
+                document.head.appendChild(estilo);
+            }
+            estilo.textContent = `@page { size: 58mm ${altoMm}mm; margin: 0; }`;
+            window.print();
+        }
+
         function descargarBoleta() {
             const ticketElement = document.getElementById('boleta-ticket');
-            html2canvas(ticketElement).then(canvas => {
+            html2canvas(ticketElement, { backgroundColor: '#fffef9' }).then(canvas => {
                 const enlace = document.createElement('a');
                 enlace.download = `Boleta_Mesa{{ pedido.mesa_asignada.numero }}_Tck00{{ pedido.id }}.png`;
                 enlace.href = canvas.toDataURL('image/png');

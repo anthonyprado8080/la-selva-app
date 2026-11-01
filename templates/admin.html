@@ -2,237 +2,344 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <title>Admin Dashboard</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Dashboard - La Selva del Prado</title>
+    {% include '_theme.html' %}
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;800&display=swap');
-        body { font-family: 'Poppins', sans-serif; margin: 0; padding: 20px; background-color: #f4f7f6; color: #2c3e50; }
-        .container { max-width: 1200px; margin: 0 auto; background: white; padding: 30px; border-radius: 15px; box-shadow: 0 10px 30px rgba(0,0,0,0.05); }
-        .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px; border-bottom: 2px solid #eee; padding-bottom: 20px; }
-        .header h1 { margin: 0; color: #1abc9c; }
-        .header a { color: #e74c3c; text-decoration: none; font-weight: bold; background: #ffebee; padding: 8px 15px; border-radius: 8px; }
-        .section { margin-bottom: 40px; padding: 20px; background: #ffffff; border: 1px solid #eee; border-radius: 12px; }
-        h2 { color: #34495e; font-size: 1.5rem; margin-top: 0; }
-        
-        table { width: 100%; border-collapse: separate; border-spacing: 0; margin-top: 15px; }
-        th { background-color: #1abc9c; color: white; padding: 15px; text-align: left; }
-        th:first-child { border-top-left-radius: 10px; } th:last-child { border-top-right-radius: 10px; }
-        td { padding: 15px; border-bottom: 1px solid #f0f0f0; vertical-align: top; }
-        tr:hover td { background-color: #f9fdfc; }
-        
-        button { background-color: #1abc9c; color: white; border: none; padding: 10px 15px; cursor: pointer; border-radius: 8px; font-family: 'Poppins'; font-weight: 600; transition: all 0.3s; }
-        button:hover { background-color: #16a085; transform: translateY(-2px); box-shadow: 0 5px 15px rgba(26, 188, 156, 0.3); }
-        .btn-danger { background-color: #e74c3c; } .btn-danger:hover { background-color: #c0392b; }
-        .btn-small { padding: 6px 10px; font-size: 0.8rem; background-color: #3498db; } .btn-small:hover { background-color: #2980b9; }
-        input, select { padding: 10px; border: 1px solid #ddd; border-radius: 8px; font-family: 'Poppins'; outline: none; margin-right: 5px; margin-bottom: 5px; box-sizing: border-box; }
-        input:focus, select:focus { border-color: #1abc9c; }
-        
-        .pedido-detalle { margin: 10px 0 0 15px; color: #555; }
-        .flash { background-color: #d4edda; color: #155724; padding: 15px; border-radius: 8px; border-left: 5px solid #28a745; margin-bottom: 20px;}
-        .caja-total { font-size: 2rem; color: #27ae60; font-weight: bold; margin: 10px 0 20px 0; }
-        
-        .ventana-cobro { border: 2px solid #1abc9c; background-color: #f0fbf9; padding: 25px; border-radius: 12px; box-shadow: 0 5px 20px rgba(26, 188, 156, 0.15); }
-        .ventana-cobro h2 { color: #16a085; font-weight: 800; font-size: 1.8rem; margin-bottom: 5px; }
-        .resumen-monto { display: flex; justify-content: space-between; align-items: center; background: white; padding: 15px; border-radius: 8px; margin-bottom: 15px; border: 1px dashed #1abc9c;}
-        .input-file { border: 1px dashed #1abc9c; background: #f9fdfc; cursor: pointer; padding: 8px; width: 100%; max-width: 250px; }
-        
-        .btn-correccion { color: white; border: none; padding: 4px 10px; border-radius: 4px; cursor: pointer; font-weight: bold; font-size: 1rem; transition: 0.2s;}
-        .btn-restar { background-color: #f39c12; } .btn-restar:hover { background-color: #e67e22; }
-        .btn-sumar { background-color: #2ecc71; } .btn-sumar:hover { background-color: #27ae60; }
-        .btn-borrar { background-color: #e74c3c; } .btn-borrar:hover { background-color: #c0392b; }
+        dialog { padding: 0; margin: auto; border-radius: 1.75rem; width: calc(100% - 2rem); max-width: 32rem; background: #f6f3ec; color: #15211b; box-shadow: 0 40px 80px -20px rgba(0,0,0,.6); }
+        dialog[open] { animation: entrada .3s ease-out; }
+        dialog::backdrop { background: rgba(7,21,15,.7); backdrop-filter: blur(5px); }
+        .pestana[aria-selected="true"] { background: #c98a3c; color: #07150f; }
+        .pago input:checked + span { background: #123326; color: #f6f3ec; border-color: #123326; }
+        .pago input:focus-visible + span { box-shadow: 0 0 0 3px rgba(201,138,60,.5); }
+        .boton-mini { width: 1.9rem; height: 1.9rem; border-radius: 999px; font-size: .7rem; transition: transform .15s, filter .15s; }
+        .boton-mini:hover { transform: scale(1.1); filter: brightness(1.1); }
     </style>
 </head>
-<body>
-<div class="container">
-    <div class="header">
-        <h1>🌿 Admin Panel - La Selva del Prado</h1>
-        <a href="/admin/logout">Cerrar Sesión</a>
-    </div>
+<body class="bg-hueso text-tinta font-sans antialiased">
+{% set pagos = pedidos_pagados | sort(attribute='fecha_hora', reverse=true) %}
+{% set metodos = [
+    ('Yape/Plin', 'fa-mobile-screen-button', 'bg-[#742284]', 'text-white'),
+    ('Efectivo', 'fa-money-bill-wave', 'bg-esmeralda-700', 'text-white'),
+    ('Tarjeta', 'fa-credit-card', 'bg-[#1f4fa3]', 'text-white')
+] %}
+{% set por_cobrar = namespace(total=0, cuentas=0) %}
+{% for mesa in mesas %}{% for p in mesa.pedidos %}{% if p.estado == 'Pendiente' %}{% set por_cobrar.total = por_cobrar.total + p.total %}{% set por_cobrar.cuentas = por_cobrar.cuentas + 1 %}{% endif %}{% endfor %}{% endfor %}
 
+<header class="selva-bg text-hueso">
+    <div class="max-w-7xl mx-auto px-4 sm:px-8 py-5 flex flex-wrap items-center gap-x-8 gap-y-4">
+        <div class="flex items-center gap-3">
+            {% with logo_class='w-12 h-12 shrink-0' %}{% include '_logo.html' %}{% endwith %}
+            <div>
+                <p class="text-[11px] font-semibold tracking-[.3em] uppercase text-ambar-300">Administración</p>
+                <p class="font-display text-3xl font-semibold leading-tight">La Selva del Prado</p>
+            </div>
+        </div>
+        <div role="tablist" aria-label="Secciones" class="flex flex-wrap rounded-full bg-white/10 p-1">
+            <button type="button" role="tab" id="tab-dashboard" data-tab="dashboard" aria-controls="panel-dashboard" aria-selected="true" class="pestana rounded-full px-4 py-2 text-sm font-semibold transition"><i class="fa-solid fa-chart-simple mr-2" aria-hidden="true"></i>Dashboard</button>
+            <button type="button" role="tab" id="tab-mesas" data-tab="mesas" aria-controls="panel-mesas" aria-selected="false" class="pestana rounded-full px-4 py-2 text-sm font-semibold transition"><i class="fa-solid fa-chair mr-2" aria-hidden="true"></i>Mesas</button>
+            <button type="button" role="tab" id="tab-menu" data-tab="menu" aria-controls="panel-menu" aria-selected="false" class="pestana rounded-full px-4 py-2 text-sm font-semibold transition"><i class="fa-solid fa-book-open mr-2" aria-hidden="true"></i>Gestión de Menú</button>
+        </div>
+        <div class="ml-auto flex flex-wrap gap-2">
+            <a href="/carta" class="rounded-full border border-white/25 px-4 py-2 text-sm font-semibold hover:bg-white/10 transition"><i class="fa-solid fa-utensils mr-2" aria-hidden="true"></i>Ver carta</a>
+            <a href="/admin/logout" class="rounded-full border border-white/25 px-4 py-2 text-sm font-semibold hover:bg-white/10 transition"><i class="fa-solid fa-right-from-bracket mr-2" aria-hidden="true"></i>Cerrar Sesión</a>
+        </div>
+    </div>
+</header>
+
+<main class="max-w-7xl mx-auto px-4 sm:px-8 py-8">
     {% with messages = get_flashed_messages(with_categories=true) %}
-      {% if messages %}
         {% for category, message in messages %}
-          <div class="flash">{{ message }}</div>
+            <p role="alert" class="mb-5 rounded-2xl text-white text-sm font-semibold px-4 py-3 {{ 'bg-alerta' if category == 'error' else 'bg-esmeralda-700' }}"><i class="fa-solid {{ 'fa-circle-exclamation' if category == 'error' else 'fa-circle-check' }} mr-2" aria-hidden="true"></i>{{ message }}</p>
         {% endfor %}
-      {% endif %}
     {% endwith %}
 
-    <div class="section ventana-cobro">
-        <h2>🧮 Ventana de Cobro Rápido</h2>
-        <form id="form_cobro_rapido" method="POST" action="">
-            <select id="mesa_select" onchange="actualizarTotalRápido()" required style="width: 100%; font-size: 1.1rem; padding: 15px; font-weight: bold;">
-                <option value="" disabled selected>-- Elige una mesa que haya terminado de comer --</option>
-                {% for mesa in mesas %}
-                    {% if mesa.pedidos %}
-                        {% set p = mesa.pedidos | selectattr("estado", "equalto", "Pendiente") | first %}
-                        {% if p %}
-                            <option value="{{ p.id }}" data-total="{{ p.total }}">Mesa {{ mesa.numero }} (S/ {{ "%.2f"|format(p.total) }})</option>
-                        {% endif %}
-                    {% endif %}
-                {% endfor %}
-            </select>
-            
-            <div id="info_cobro" style="display:none; margin-top: 20px;">
-                <div class="resumen-monto">
-                    <span style="font-size: 1.3rem; font-weight: 600; color: #2c3e50;">Total a Cobrar:</span>
-                    <span style="font-size: 2rem; font-weight: 800; color: #27ae60;">S/ <span id="total_rapido">0.00</span></span>
-                </div>
-                
-                <select name="metodo_pago" id="metodo_pago_rapido" onchange="toggleMontoRapido()" required style="width: 100%; padding: 15px; font-size: 1.1rem; margin-bottom: 15px;">
-                    <option value="Efectivo">💵 Pago en Efectivo (Calcular Vuelto)</option>
-                    <option value="Yape/Plin">📱 Yape / Plin (Monto exacto)</option>
-                    <option value="Tarjeta">💳 Tarjeta (Monto exacto)</option>
-                </select>
-                
-                <div id="caja_efectivo_rapido" style="background: white; padding: 15px; border-radius: 8px; margin-bottom: 15px; text-align: center;">
-                    <label style="display: block; color: #34495e; font-weight: bold; margin-bottom: 10px; font-size: 1.1rem;">¿Con cuánto dinero te paga el cliente?</label>
-                    <input type="number" step="0.10" name="monto_recibido" id="monto_recibido_rapido" placeholder="Ej: 50.00" style="width: 100%; max-width: 300px; text-align: center; font-size: 1.5rem; padding: 10px; border: 2px solid #bdc3c7;" oninput="calcularVueltoRapido()">
-                    
-                    <div style="margin-top: 15px;">
-                        <span style="font-size: 1.2rem; color: #7f8c8d;">Vuelto a entregar:</span><br>
-                        <span id="vuelto_rapido" style="font-size: 2.5rem; font-weight: 800; color: #e74c3c;">S/ 0.00</span>
+    <!-- DASHBOARD -->
+    <section id="panel-dashboard" role="tabpanel" aria-labelledby="tab-dashboard" class="space-y-5">
+        <div class="grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
+            <div class="selva-bg text-hueso rounded-3xl p-6 shadow-alta sm:col-span-2">
+                <p class="text-sm font-semibold text-ambar-300">Ganancias de la caja</p>
+                <p class="font-display text-7xl font-semibold leading-none mt-3">S/ {{ "%.2f"|format(ganancias) }}</p>
+                <p class="text-sm text-selva-200 mt-3">Ventas cobradas desde el último cierre, sin descontar costos.</p>
+            </div>
+            <div class="bg-papel rounded-3xl p-6 shadow-suave">
+                <p class="text-sm font-semibold text-selva-700">Ventas del día</p>
+                <p class="font-display text-6xl font-semibold leading-none mt-3">{{ pagos|length }}</p>
+                <p class="text-sm text-selva-700 mt-3">Promedio S/ {{ "%.2f"|format(ganancias / pagos|length if pagos else 0) }}</p>
+            </div>
+            <div class="bg-papel rounded-3xl p-6 shadow-suave">
+                <p class="text-sm font-semibold text-selva-700">Por cobrar</p>
+                <p class="font-display text-6xl font-semibold leading-none mt-3">S/ {{ "%.0f"|format(por_cobrar.total) }}</p>
+                <p class="text-sm text-selva-700 mt-3">{{ por_cobrar.cuentas }} {{ 'cuenta abierta' if por_cobrar.cuentas == 1 else 'cuentas abiertas' }}</p>
+            </div>
+        </div>
+
+        <div class="grid gap-5 lg:grid-cols-[minmax(0,1.25fr)_minmax(0,1fr)]">
+            <div class="bg-papel rounded-3xl p-6 shadow-suave border-2 border-esmeralda-500/40">
+                <h2 class="font-display text-3xl font-semibold"><i class="fa-solid fa-cash-register text-xl text-esmeralda-700 mr-2" aria-hidden="true"></i>Cobro Rápido</h2>
+                <form id="form_cobro_rapido" method="POST" action="" class="mt-4">
+                    <label for="mesa_select" class="block text-sm font-semibold mb-2">Mesa que terminó de comer</label>
+                    <select id="mesa_select" onchange="actualizarTotalRápido()" required class="campo font-semibold">
+                        <option value="" disabled selected>Elige una mesa</option>
+                        {% for mesa in mesas %}
+                            {% set p = mesa.pedidos | selectattr("estado", "equalto", "Pendiente") | first %}
+                            {% if p %}
+                                <option value="{{ p.id }}" data-total="{{ p.total }}" data-mesa="{{ mesa.numero }}">Mesa {{ mesa.numero }} (S/ {{ "%.2f"|format(p.total) }})</option>
+                            {% endif %}
+                        {% endfor %}
+                    </select>
+
+                    <p id="cobro_vacio" class="mt-12 text-center text-selva-700"><i class="fa-solid fa-receipt block text-4xl text-ambar-500 mb-4" aria-hidden="true"></i>{{ 'Elige una mesa para ver el total y cobrar.' if por_cobrar.cuentas else 'No hay cuentas abiertas por cobrar.' }}</p>
+                    <div id="info_cobro" class="hidden mt-5 space-y-4">
+                        <div class="flex items-baseline justify-between rounded-2xl border border-dashed border-esmeralda-500 bg-white px-5 py-4">
+                            <span class="font-semibold">Total a cobrar</span>
+                            <span class="font-display text-5xl font-semibold leading-none">S/ <span id="total_rapido">0.00</span></span>
+                        </div>
+                        <fieldset>
+                            <legend class="text-sm font-semibold mb-2">Método de pago</legend>
+                            <div class="grid grid-cols-3 gap-2">
+                                {% for nombre, icono, _, _ in metodos %}
+                                <label class="pago cursor-pointer">
+                                    <input type="radio" name="metodo_pago" value="{{ nombre }}" onchange="toggleMontoRapido()" class="sr-only" {{ 'checked' if nombre == 'Efectivo' }}>
+                                    <span class="block text-center text-sm font-semibold rounded-2xl border border-tinta/15 bg-white py-3.5 transition"><i class="fa-solid {{ icono }} block text-lg mb-1" aria-hidden="true"></i>{{ nombre }}</span>
+                                </label>
+                                {% endfor %}
+                            </div>
+                        </fieldset>
+                        <div id="caja_efectivo_rapido" class="rounded-2xl bg-white p-5">
+                            <label for="monto_recibido_rapido" class="block text-sm font-semibold mb-2">¿Con cuánto paga el cliente?</label>
+                            <input type="number" step="0.01" min="0" name="monto_recibido" id="monto_recibido_rapido" placeholder="Ej: 50.00" class="campo text-xl font-semibold" oninput="calcularVueltoRapido()">
+                            <div class="flex items-baseline justify-between mt-3">
+                                <span class="font-semibold">Vuelto a entregar</span>
+                                <span id="vuelto_rapido" class="font-display text-4xl font-semibold text-alerta">S/ 0.00</span>
+                            </div>
+                        </div>
+                        <p id="cobro_error" role="alert" class="text-alerta text-sm font-semibold empty:hidden"></p>
+                        <button type="submit" class="brillo w-full rounded-2xl bg-esmeralda-700 text-white font-bold py-4 hover:bg-esmeralda-500"><i class="fa-solid fa-circle-check mr-2" aria-hidden="true"></i>Confirmar Cobro e Imprimir Boleta</button>
+                    </div>
+                </form>
+            </div>
+
+            <div class="space-y-5">
+                <div class="bg-papel rounded-3xl p-6 shadow-suave">
+                    <h2 class="font-display text-3xl font-semibold">Por método de pago</h2>
+                    <div class="mt-4 space-y-4">
+                        {% for nombre, icono, fondo, texto in metodos %}
+                        {% set grupo = pagos | selectattr('metodo_pago', 'equalto', nombre) | list %}
+                        {% set monto = grupo | sum(attribute='total') %}
+                        {% set parte = (monto / ganancias * 100) if ganancias else 0 %}
+                        <div>
+                            <div class="flex items-center justify-between gap-3">
+                                <span class="inline-flex items-center gap-2 rounded-full {{ fondo }} {{ texto }} text-xs font-bold px-3 py-1"><i class="fa-solid {{ icono }}" aria-hidden="true"></i>{{ nombre }}</span>
+                                <span class="font-display text-2xl font-semibold">S/ {{ "%.2f"|format(monto) }}</span>
+                            </div>
+                            <div class="h-1.5 rounded-full bg-selva-100 mt-2 overflow-hidden"><div class="h-full rounded-full {{ fondo }}" style="width: {{ parte }}%"></div></div>
+                            <p class="text-xs text-selva-700 mt-1">{{ "%.0f"|format(parte) }}% · {{ grupo|length }} {{ 'venta' if grupo|length == 1 else 'ventas' }}</p>
+                        </div>
+                        {% endfor %}
                     </div>
                 </div>
-                
-                <button type="submit" style="width: 100%; padding: 15px; font-size: 1.2rem; background-color: #27ae60;">✅ Confirmar Cobro e Imprimir Boleta</button>
+                <div class="grid gap-3 sm:grid-cols-3 lg:grid-cols-1 xl:grid-cols-3">
+                    <a href="/admin/exportar-csv" class="bg-papel rounded-3xl p-4 shadow-suave hover:-translate-y-0.5 transition"><i class="fa-solid fa-file-csv text-2xl text-esmeralda-700" aria-hidden="true"></i><span class="block font-bold text-sm mt-2">Exportar a CSV</span><span class="block text-xs text-selva-700 mt-0.5">Ventas de la caja actual</span></a>
+                    <a href="/admin/copia-seguridad" class="bg-papel rounded-3xl p-4 shadow-suave hover:-translate-y-0.5 transition"><i class="fa-solid fa-cloud-arrow-down text-2xl text-ambar-600" aria-hidden="true"></i><span class="block font-bold text-sm mt-2">Descargar Copia de Seguridad</span><span class="block text-xs text-selva-700 mt-0.5">Carta y fotos en .json</span></a>
+                    <form action="/admin/limpiar-caja" method="POST" data-confirmar="Se reiniciará la caja a S/ 0.00. Las ventas quedan archivadas y dejan de aparecer aquí." data-titulo="¿Hacer el Cierre de Día?" data-accion="Cerrar el día" class="contents">
+                        <button type="submit" class="text-left bg-alerta/5 border border-alerta/30 rounded-3xl p-4 hover:bg-alerta/10 hover:-translate-y-0.5 transition"><i class="fa-solid fa-moon text-2xl text-alerta" aria-hidden="true"></i><span class="block font-bold text-sm mt-2 text-alerta">Cierre de Día</span><span class="block text-xs text-selva-700 mt-0.5">Reinicia la caja a S/ 0.00</span></button>
+                    </form>
+                </div>
             </div>
-        </form>
-    </div>
+        </div>
 
-    <div class="section">
-        <h2>💰 Caja del Día</h2>
-        <div class="caja-total">S/ {{ "%.2f"|format(ganancias) }}</div>
-        <form action="/admin/limpiar-caja" method="POST">
-            <button type="submit" onclick="return confirm('¿Reiniciar la caja a S/0.00?');">Reiniciar Caja</button>
-        </form>
-    </div>
+        <div class="bg-papel rounded-3xl shadow-suave overflow-hidden">
+            <div class="px-6 pt-6 pb-3"><h2 class="font-display text-3xl font-semibold">Historial del día</h2></div>
+            {% if pagos %}
+            <div class="overflow-x-auto">
+                <table class="w-full text-sm whitespace-nowrap">
+                    <thead class="text-left text-selva-700 border-y border-tinta/10"><tr>
+                        <th scope="col" class="font-semibold px-6 py-3">Ticket</th><th scope="col" class="font-semibold px-4 py-3">Hora</th><th scope="col" class="font-semibold px-4 py-3">Mesa</th><th scope="col" class="font-semibold px-4 py-3">Pago</th><th scope="col" class="font-semibold px-4 py-3 text-right">Vuelto</th><th scope="col" class="font-semibold px-4 py-3 text-right">Total</th><th scope="col" class="px-6 py-3"><span class="sr-only">Boleta</span></th>
+                    </tr></thead>
+                    <tbody class="divide-y divide-tinta/10">
+                        {% for p in pagos %}
+                        <tr class="hover:bg-selva-100/60 transition-colors">
+                            <td class="px-6 py-3 font-semibold">{{ "%06d"|format(p.id) }}</td>
+                            <td class="px-4 py-3">{{ p.fecha_hora.strftime('%d/%m %I:%M %p') }}</td>
+                            <td class="px-4 py-3">Mesa {{ p.mesa_asignada.numero }}</td>
+                            <td class="px-4 py-3">
+                                {% for nombre, icono, fondo, texto in metodos if nombre == p.metodo_pago %}
+                                <span class="inline-flex items-center gap-1.5 rounded-full {{ fondo }} {{ texto }} text-xs font-bold px-2.5 py-1"><i class="fa-solid {{ icono }}" aria-hidden="true"></i>{{ nombre }}</span>
+                                {% else %}{{ p.metodo_pago }}{% endfor %}
+                            </td>
+                            <td class="px-4 py-3 text-right">{{ "S/ %.2f"|format(p.vuelto) if p.metodo_pago == 'Efectivo' else '—' }}</td>
+                            <td class="px-4 py-3 text-right font-bold">S/ {{ "%.2f"|format(p.total) }}</td>
+                            <td class="px-6 py-3 text-right"><a href="/admin/boleta/{{ p.id }}" class="text-ambar-700 font-semibold hover:underline"><i class="fa-solid fa-receipt mr-1" aria-hidden="true"></i>Ver boleta</a></td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% else %}
+            <p class="px-6 pb-10 pt-4 text-center text-selva-700">Todavía no hay ventas registradas en esta caja.</p>
+            {% endif %}
+        </div>
+    </section>
 
-    <div class="section">
-        <h2>🪑 Gestión de Mesas y Detalles</h2>
-        <form action="/admin/mesa/agregar" method="POST" style="margin-bottom: 15px;">
-            <input type="number" name="numero" placeholder="N° Mesa" required style="width: 100px;">
-            <input type="text" name="password" placeholder="Contraseña" required>
-            <button type="submit">Agregar Mesa</button>
-        </form>
-        <table>
-            <tr>
-                <th>Mesa</th>
-                <th>Comandas (con hora y edición)</th>
-                <th>Estado</th>
-                <th>Opciones</th>
-            </tr>
+    <!-- MESAS -->
+    <section id="panel-mesas" role="tabpanel" aria-labelledby="tab-mesas" class="hidden space-y-5">
+        <div class="bg-papel rounded-3xl p-6 shadow-suave">
+            <h2 class="font-display text-3xl font-semibold">Agregar mesa</h2>
+            <form action="/admin/mesa/agregar" method="POST" class="mt-4 flex flex-wrap items-end gap-3">
+                <div class="w-28"><label for="nueva-mesa" class="block text-sm font-semibold mb-1">N° Mesa</label><input id="nueva-mesa" type="number" name="numero" required class="campo"></div>
+                <div class="flex-1 min-w-[12rem]"><label for="nueva-clave" class="block text-sm font-semibold mb-1">Contraseña</label><input id="nueva-clave" type="text" name="password" required autocomplete="off" class="campo"></div>
+                <button type="submit" class="brillo rounded-2xl bg-selva-800 text-hueso font-bold px-6 py-3.5 hover:bg-selva-700"><i class="fa-solid fa-plus mr-2" aria-hidden="true"></i>Agregar Mesa</button>
+            </form>
+        </div>
+
+        <div class="grid gap-5 md:grid-cols-2 xl:grid-cols-3 items-start">
             {% for mesa in mesas %}
-            <tr>
-                <td><strong>Mesa {{ mesa.numero }}</strong></td>
-                <td>
-                    {% if mesa.pedidos %}
-                        {% set pedido_pendiente = mesa.pedidos | selectattr("estado", "equalto", "Pendiente") | first %}
-                        {% if pedido_pendiente %}
-                            <span style="color: #f39c12; font-weight: bold;">🔴 Comiendo</span>
-                            <ul class="pedido-detalle" style="list-style-type: none; padding-left: 0;">
-                            {% for detalle in pedido_pendiente.detalles %}
-                                <li style="margin-bottom: 8px; display: flex; align-items: center; flex-wrap: wrap; gap: 5px;">
-                                    <span style="background-color: #3498db; color: white; padding: 2px 6px; border-radius: 4px; font-size: 0.75rem; font-weight: bold; margin-right: 5px;">
-                                        {{ detalle.hora_pedido.strftime('%I:%M %p') }}
-                                    </span>
-                                    <strong style="font-size: 1.1rem;">{{ detalle.cantidad }}x</strong> {{ detalle.plato.nombre }}
-                                    
-                                    <div style="margin-left: auto; display: flex; gap: 3px;">
-                                        <form action="/admin/pedido/editar-detalle/{{ detalle.id }}" method="POST" style="margin: 0;">
-                                            <input type="hidden" name="accion" value="restar">
-                                            <button type="submit" class="btn-correccion btn-restar" title="Quitar 1">-</button>
-                                        </form>
-                                        <form action="/admin/pedido/editar-detalle/{{ detalle.id }}" method="POST" style="margin: 0;">
-                                            <input type="hidden" name="accion" value="sumar">
-                                            <button type="submit" class="btn-correccion btn-sumar" title="Añadir 1">+</button>
-                                        </form>
-                                        <form action="/admin/pedido/editar-detalle/{{ detalle.id }}" method="POST" style="margin: 0;">
-                                            <input type="hidden" name="accion" value="eliminar">
-                                            <button type="submit" class="btn-correccion btn-borrar" title="Eliminar todo" onclick="return confirm('¿Seguro que deseas eliminar este plato del pedido?');">✖</button>
-                                        </form>
-                                    </div>
-                                </li>
-                            {% endfor %}
-                            </ul>
-                        {% else %}
-                            <span style="color: #bdc3c7;">Libre</span>
-                        {% endif %}
-                    {% else %}
-                        <span style="color: #bdc3c7;">Libre</span>
-                    {% endif %}
-                </td>
-                <td>
-                    {% if mesa.pedidos and pedido_pendiente %}
-                        <strong style="color: #27ae60; font-size: 1.1rem;">Por Pagar: S/ {{ "%.2f"|format(pedido_pendiente.total) }}</strong>
-                    {% else %}
-                        -
-                    {% endif %}
-                </td>
-                <td>
-                    <form action="/admin/mesa/cambiar-clave/{{ mesa.id }}" method="POST">
-                        <input type="text" name="nueva_clave" placeholder="Nueva clave" required style="width: 100px;">
-                        <button type="submit" class="btn-small">Cambiar Clave</button>
-                    </form>
-                </td>
-            </tr>
+            {% set pedido_pendiente = mesa.pedidos | selectattr("estado", "equalto", "Pendiente") | first %}
+            <article class="bg-papel rounded-3xl p-5 shadow-suave border-t-4 {{ 'border-ambar-500' if pedido_pendiente else 'border-esmeralda-500' }}">
+                <div class="flex items-center justify-between gap-3">
+                    <h3 class="font-display text-3xl font-semibold">Mesa {{ "%02d"|format(mesa.numero) }}</h3>
+                    <span class="rounded-full text-xs font-bold px-3 py-1 {{ 'bg-ambar-500/20 text-ambar-800' if pedido_pendiente else 'bg-esmeralda-500/15 text-esmeralda-700' }}">{{ 'Ocupada' if pedido_pendiente else 'Libre' }}</span>
+                </div>
+                {% if pedido_pendiente %}
+                <ul class="mt-3 divide-y divide-tinta/10">
+                    {% for detalle in pedido_pendiente.detalles %}
+                    <li class="py-2.5 flex items-center gap-2 text-sm">
+                        <div class="flex-1 min-w-0">
+                            <p class="font-semibold"><span class="text-ambar-700">{{ detalle.cantidad }}×</span> {{ detalle.plato.nombre if detalle.plato else 'Producto eliminado' }}</p>
+                            <p class="text-xs text-selva-700">{{ detalle.hora_pedido.strftime('%I:%M %p') }}</p>
+                        </div>
+                        <form action="/admin/pedido/editar-detalle/{{ detalle.id }}" method="POST"><input type="hidden" name="accion" value="restar"><button type="submit" class="boton-mini bg-ambar-500 text-selva-950" title="Quitar 1" aria-label="Quitar uno"><i class="fa-solid fa-minus" aria-hidden="true"></i></button></form>
+                        <form action="/admin/pedido/editar-detalle/{{ detalle.id }}" method="POST"><input type="hidden" name="accion" value="sumar"><button type="submit" class="boton-mini bg-esmeralda-700 text-white" title="Añadir 1" aria-label="Añadir uno"><i class="fa-solid fa-plus" aria-hidden="true"></i></button></form>
+                        <form action="/admin/pedido/editar-detalle/{{ detalle.id }}" method="POST" data-confirmar="El producto se quitará de la cuenta de la Mesa {{ mesa.numero }}." data-titulo="¿Eliminar este producto?" data-accion="Eliminar"><input type="hidden" name="accion" value="eliminar"><button type="submit" class="boton-mini bg-alerta text-white" title="Eliminar todo" aria-label="Eliminar todo"><i class="fa-solid fa-xmark" aria-hidden="true"></i></button></form>
+                    </li>
+                    {% endfor %}
+                </ul>
+                <p class="flex items-baseline justify-between pt-3 border-t border-tinta/10 font-semibold">Por pagar <span class="font-display text-3xl">S/ {{ "%.2f"|format(pedido_pendiente.total) }}</span></p>
+                {% else %}
+                <p class="mt-3 text-sm text-selva-700">Sin pedidos abiertos.</p>
+                {% endif %}
+                <form action="/admin/mesa/cambiar-clave/{{ mesa.id }}" method="POST" class="mt-4 flex gap-2">
+                    <label class="sr-only" for="clave-{{ mesa.id }}">Nueva clave de la Mesa {{ mesa.numero }}</label>
+                    <input id="clave-{{ mesa.id }}" type="text" name="nueva_clave" placeholder="Nueva clave" required autocomplete="off" class="campo !py-2 text-sm">
+                    <button type="submit" class="shrink-0 rounded-xl border border-tinta/20 text-sm font-semibold px-3 hover:bg-selva-100 transition">Cambiar</button>
+                </form>
+            </article>
+            {% else %}
+            <p class="text-selva-700">Todavía no hay mesas.</p>
             {% endfor %}
-        </table>
-    </div>
+        </div>
+    </section>
 
-    <div class="section">
-        <h2>🍔 Tu Carta</h2>
-        <form action="/admin/plato/agregar" method="POST" enctype="multipart/form-data" style="margin-bottom: 15px; display: flex; flex-wrap: wrap; gap: 10px; align-items: center;">
-            <input type="text" name="nombre" placeholder="Nombre del producto" required>
-            <input type="text" name="descripcion" placeholder="Descripción breve"> 
-            <input type="number" step="0.1" name="precio" placeholder="S/ Precio" required style="width: 100px;">
-            
-            <!-- AQUÍ AGREGAMOS LAS NUEVAS CATEGORÍAS -->
-            <select name="categoria">
-                <option value="Comida">Comida</option>
-                <option value="Bebida">Bebida</option>
-                <option value="Golosinas">Golosinas</option>
-                <option value="Piscina">Piscina</option>
-            </select>
-            
-            <input type="file" name="imagen" accept="image/*" class="input-file" required>
-            
-            <button type="submit">Guardar Plato/Ticket</button>
-        </form>
+    <!-- GESTIÓN DE MENÚ -->
+    <section id="panel-menu" role="tabpanel" aria-labelledby="tab-menu" class="hidden space-y-5">
+        <div class="bg-papel rounded-3xl p-6 shadow-suave">
+            <h2 class="font-display text-3xl font-semibold">Agregar a la carta</h2>
+            <form action="/admin/plato/agregar" method="POST" enctype="multipart/form-data" class="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-[1.2fr_1.5fr_.6fr_.8fr_1.2fr_auto] items-end">
+                <div><label for="p-nombre" class="block text-sm font-semibold mb-1">Nombre</label><input id="p-nombre" type="text" name="nombre" required class="campo"></div>
+                <div><label for="p-desc" class="block text-sm font-semibold mb-1">Descripción</label><input id="p-desc" type="text" name="descripcion" class="campo"></div>
+                <div><label for="p-precio" class="block text-sm font-semibold mb-1">Precio (S/)</label><input id="p-precio" type="number" step="0.01" min="0" name="precio" required class="campo"></div>
+                <div><label for="p-cat" class="block text-sm font-semibold mb-1">Categoría</label>
+                    <select id="p-cat" name="categoria" class="campo">
+                        <option value="Comida">Comida</option>
+                        <option value="Bebida">Bebida</option>
+                        <option value="Golosinas">Golosinas</option>
+                        <option value="Piscina">Piscina</option>
+                    </select>
+                </div>
+                <div><label for="p-img" class="block text-sm font-semibold mb-1">Foto</label><input id="p-img" type="file" name="imagen" accept="image/*" required class="campo !py-2.5 text-sm"></div>
+                <button type="submit" class="brillo rounded-2xl bg-selva-800 text-hueso font-bold px-5 py-3.5 hover:bg-selva-700 whitespace-nowrap"><i class="fa-solid fa-plus mr-1" aria-hidden="true"></i>Guardar</button>
+            </form>
+        </div>
 
-        <table>
-            <tr>
-                <th>Producto</th>
-                <th>Categoría</th>
-                <th>Precio Actual</th>
-                <th>Estado</th>
-                <th>Opciones</th>
-            </tr>
+        <ul class="bg-papel rounded-3xl shadow-suave divide-y divide-tinta/10 overflow-hidden">
             {% for plato in platos %}
-            <tr>
-                <td><strong>{{ plato.nombre }}</strong><br><small style="color: gray;">{{ plato.descripcion }}</small></td>
-                <td>{{ plato.categoria }}</td>
-                <td>
-                    <form action="/admin/plato/editar-precio/{{ plato.id }}" method="POST" style="display:flex; align-items:center; gap:5px; margin:0;">
-                        <strong style="color: #1abc9c;">S/</strong>
-                        <input type="number" step="0.10" name="nuevo_precio" value="{{ "%.2f"|format(plato.precio) }}" required style="width: 70px; padding: 5px; margin: 0; font-size: 0.9rem; border: 1px solid #bdc3c7; border-radius: 4px;">
-                        <button type="submit" style="padding: 5px 8px; background-color: #3498db; border-radius: 4px;" title="Guardar Nuevo Precio">💾</button>
+            {% set img_url = url_for('static', filename='uploads/' + plato.imagen) if not plato.imagen.startswith('http') else plato.imagen %}
+            <li class="flex flex-wrap items-center gap-4 px-5 py-4 hover:bg-selva-100/40 transition-colors {{ 'opacity-60' if not plato.disponible }}">
+                <div class="w-16 h-16 shrink-0 rounded-2xl overflow-hidden bg-selva-800"><img src="{{ img_url }}" alt="" loading="lazy" class="w-full h-full object-cover" onerror="this.remove()"></div>
+                <div class="flex-1 min-w-[12rem]">
+                    <p class="font-display text-2xl font-semibold leading-tight">{{ plato.nombre }}</p>
+                    <p class="text-sm text-selva-700">{{ plato.categoria }}{% if plato.descripcion %} · {{ plato.descripcion }}{% endif %}</p>
+                </div>
+                <form action="/admin/plato/editar-precio/{{ plato.id }}" method="POST" class="flex items-center gap-1.5">
+                    <label class="text-sm font-semibold" for="precio-{{ plato.id }}">S/</label>
+                    <input id="precio-{{ plato.id }}" type="number" step="0.01" min="0" name="nuevo_precio" value="{{ "%.2f"|format(plato.precio) }}" required class="campo !w-24 !py-2 text-sm">
+                    <button type="submit" title="Guardar precio" aria-label="Guardar precio de {{ plato.nombre }}" class="w-9 h-9 rounded-xl bg-selva-800 text-hueso hover:bg-selva-700 transition"><i class="fa-solid fa-floppy-disk text-sm" aria-hidden="true"></i></button>
+                </form>
+                <span class="rounded-full text-xs font-bold px-3 py-1 {{ 'bg-esmeralda-500/15 text-esmeralda-700' if plato.disponible else 'bg-alerta/10 text-alerta' }}">{{ 'Activo' if plato.disponible else 'Agotado' }}</span>
+                <div class="flex items-center gap-1.5">
+                    <form action="/admin/plato/editar/{{ plato.id }}" method="POST" enctype="multipart/form-data">
+                        <label class="w-9 h-9 grid place-items-center rounded-xl cursor-pointer hover:bg-selva-100 transition focus-within:ring-2 focus-within:ring-ambar-500" title="Subir foto">
+                            <i class="fa-solid fa-camera" aria-hidden="true"></i>
+                            <input type="file" name="imagen" accept="image/jpeg,image/png,image/webp" class="sr-only" aria-label="Subir foto de {{ plato.nombre }}" onchange="this.form.submit()">
+                        </label>
                     </form>
-                </td>
-                
-                <td>
-                    {% if plato.disponible %}<span style="color: green; font-weight: bold;">✔ Activo</span>
-                    {% else %}<span style="color: red; font-weight: bold;">✖ Agotado</span>{% endif %}
-                </td>
-                <td>
-                    <form action="/admin/plato/toggle/{{ plato.id }}" method="POST" style="display:inline;"><button type="submit" style="background:#f39c12;">Pausar/Activar</button></form>
-                    <form action="/admin/plato/eliminar/{{ plato.id }}" method="POST" style="display:inline;"><button type="submit" class="btn-danger" onclick="return confirm('¿Borrar plato permanentemente?');">Borrar</button></form>
-                </td>
-            </tr>
+                    <button type="button" class="w-9 h-9 rounded-xl hover:bg-selva-100 transition" title="Editar" aria-label="Editar {{ plato.nombre }}" data-editar="{{ plato.id }}" data-nombre="{{ plato.nombre }}" data-descripcion="{{ plato.descripcion or '' }}" data-precio="{{ plato.precio }}" data-categoria="{{ plato.categoria }}"><i class="fa-solid fa-pen" aria-hidden="true"></i></button>
+                    <form action="/admin/plato/toggle/{{ plato.id }}" method="POST"><button type="submit" class="w-9 h-9 rounded-xl text-ambar-700 hover:bg-ambar-500/15 transition" title="{{ 'Pausar' if plato.disponible else 'Activar' }}" aria-label="{{ 'Pausar' if plato.disponible else 'Activar' }} {{ plato.nombre }}"><i class="fa-solid {{ 'fa-pause' if plato.disponible else 'fa-play' }}" aria-hidden="true"></i></button></form>
+                    <form action="/admin/plato/eliminar/{{ plato.id }}" method="POST" data-confirmar="{{ plato.nombre }} se quitará de la carta de forma permanente." data-titulo="¿Borrar este producto?" data-accion="Borrar"><button type="submit" class="w-9 h-9 rounded-xl text-alerta hover:bg-alerta/10 transition" title="Borrar" aria-label="Borrar {{ plato.nombre }}"><i class="fa-regular fa-trash-can" aria-hidden="true"></i></button></form>
+                </div>
+            </li>
+            {% else %}
+            <li class="px-5 py-12 text-center text-selva-700">La carta está vacía.</li>
             {% endfor %}
-        </table>
-    </div>
-</div>
+        </ul>
+    </section>
+</main>
+
+<dialog id="editor" aria-labelledby="editor-titulo">
+    <form id="editor-form" method="POST" enctype="multipart/form-data" class="p-7 space-y-4">
+        <h2 id="editor-titulo" class="font-display text-4xl font-semibold">Editar producto</h2>
+        <div><label for="e-nombre" class="block text-sm font-semibold mb-1">Nombre</label><input id="e-nombre" name="nombre" required class="campo"></div>
+        <div><label for="e-descripcion" class="block text-sm font-semibold mb-1">Descripción</label><textarea id="e-descripcion" name="descripcion" rows="2" class="campo"></textarea></div>
+        <div class="grid grid-cols-2 gap-3">
+            <div><label for="e-precio" class="block text-sm font-semibold mb-1">Precio (S/)</label><input id="e-precio" type="number" step="0.01" min="0" name="precio" required class="campo"></div>
+            <div><label for="e-categoria" class="block text-sm font-semibold mb-1">Categoría</label>
+                <select id="e-categoria" name="categoria" class="campo">
+                    <option value="Comida">Comida</option>
+                    <option value="Bebida">Bebida</option>
+                    <option value="Golosinas">Golosinas</option>
+                    <option value="Piscina">Piscina</option>
+                </select>
+            </div>
+        </div>
+        <div><label for="e-imagen" class="block text-sm font-semibold mb-1">Cambiar foto (opcional)</label><input id="e-imagen" type="file" name="imagen" accept="image/jpeg,image/png,image/webp" class="campo !py-2.5 text-sm"></div>
+        <div class="grid grid-cols-2 gap-2 pt-2">
+            <button type="button" id="editor-cancelar" class="rounded-2xl border border-tinta/20 font-semibold py-3 hover:bg-tinta/5">Cancelar</button>
+            <button type="submit" class="rounded-2xl bg-selva-800 text-hueso font-bold py-3 hover:bg-selva-700">Guardar cambios</button>
+        </div>
+    </form>
+</dialog>
+
+<dialog id="confirmar" aria-labelledby="confirmar-titulo">
+    <form method="dialog" class="p-7">
+        <i class="fa-solid fa-triangle-exclamation text-2xl text-alerta" aria-hidden="true"></i>
+        <h2 id="confirmar-titulo" class="font-display text-4xl font-semibold leading-tight mt-2"></h2>
+        <p id="confirmar-texto" class="mt-3 text-selva-800"></p>
+        <div class="grid grid-cols-2 gap-2 mt-6">
+            <button value="no" class="rounded-2xl border border-tinta/20 font-semibold py-3 hover:bg-tinta/5">Cancelar</button>
+            <button value="si" id="confirmar-accion" class="rounded-2xl bg-alerta text-white font-bold py-3 hover:opacity-90"></button>
+        </div>
+    </form>
+</dialog>
 
 <script>
+    /* ---------- Pestañas (se recuerda la activa tras cada envío) ---------- */
+    const CLAVE_TAB = 'selva.admin.tab';
+    function abrirTab(nombre) {
+        document.querySelectorAll('[data-tab]').forEach((b) => {
+            const activa = b.dataset.tab === nombre;
+            b.setAttribute('aria-selected', activa);
+            document.getElementById('panel-' + b.dataset.tab).classList.toggle('hidden', !activa);
+        });
+        try { sessionStorage.setItem(CLAVE_TAB, nombre); } catch (e) { /* sin memoria de pestaña */ }
+    }
+    document.querySelectorAll('[data-tab]').forEach((b) => b.addEventListener('click', () => abrirTab(b.dataset.tab)));
+    let tabInicial = 'dashboard';
+    try { tabInicial = sessionStorage.getItem(CLAVE_TAB) || tabInicial; } catch (e) { /* por defecto */ }
+
+    /* ---------- Cobro rápido ---------- */
+    const metodoElegido = () => document.querySelector('input[name="metodo_pago"]:checked').value;
+
     function actualizarTotalRápido() {
         const select = document.getElementById('mesa_select');
         const info = document.getElementById('info_cobro');
@@ -243,17 +350,17 @@
             const total = selectedOption.getAttribute('data-total');
             totalSpan.innerText = parseFloat(total).toFixed(2);
             form.action = '/admin/cobrar/' + select.value;
-            info.style.display = 'block';
+            info.classList.remove('hidden');
+            document.getElementById('cobro_vacio').classList.add('hidden');
             document.getElementById('monto_recibido_rapido').value = '';
-            document.getElementById('vuelto_rapido').innerText = 'S/ 0.00';
-            document.getElementById('vuelto_rapido').style.color = '#e74c3c';
+            document.getElementById('cobro_error').textContent = '';
+            calcularVueltoRapido();
             toggleMontoRapido();
         }
     }
     function toggleMontoRapido() {
-        const metodo = document.getElementById('metodo_pago_rapido').value;
-        const cajaEfectivo = document.getElementById('caja_efectivo_rapido');
-        if(metodo === 'Efectivo') { cajaEfectivo.style.display = 'block'; } else { cajaEfectivo.style.display = 'none'; }
+        document.getElementById('caja_efectivo_rapido').classList.toggle('hidden', metodoElegido() !== 'Efectivo');
+        document.getElementById('cobro_error').textContent = '';
     }
     function calcularVueltoRapido() {
         const select = document.getElementById('mesa_select');
@@ -261,11 +368,64 @@
         const total = parseFloat(selectedOption.getAttribute('data-total'));
         const inputMonto = document.getElementById('monto_recibido_rapido').value;
         const spanVuelto = document.getElementById('vuelto_rapido');
-        if (!inputMonto) { spanVuelto.innerText = 'S/ 0.00'; spanVuelto.style.color = '#e74c3c'; return; }
+        const falta = inputMonto === '' || parseFloat(inputMonto) < total;
+        spanVuelto.classList.toggle('text-alerta', falta);
+        spanVuelto.classList.toggle('text-esmeralda-700', !falta);
+        if (inputMonto === '') { spanVuelto.innerText = 'S/ 0.00'; return; }
         const monto = parseFloat(inputMonto);
-        if (monto < total) { spanVuelto.innerText = 'Falta dinero'; spanVuelto.style.color = '#e74c3c'; } 
-        else { spanVuelto.innerText = 'S/ ' + (monto - total).toFixed(2); spanVuelto.style.color = '#27ae60'; }
+        spanVuelto.innerText = monto < total ? 'Falta dinero' : 'S/ ' + (monto - total).toFixed(2);
     }
+    document.getElementById('form_cobro_rapido').addEventListener('submit', (e) => {
+        const select = document.getElementById('mesa_select');
+        const total = parseFloat(select.options[select.selectedIndex].getAttribute('data-total'));
+        const monto = document.getElementById('monto_recibido_rapido').value;
+        if (metodoElegido() === 'Efectivo' && monto !== '' && parseFloat(monto) < total) {
+            e.preventDefault();
+            document.getElementById('cobro_error').textContent = 'El monto recibido no cubre el total.';
+        }
+    });
+
+    // La carta enlaza aquí con ?mesa=N para dejar lista esa cuenta
+    const mesaPedida = new URLSearchParams(location.search).get('mesa');
+    if (mesaPedida) {
+        const opcion = document.querySelector(`#mesa_select option[data-mesa="${CSS.escape(mesaPedida)}"]`);
+        if (opcion) {
+            document.getElementById('mesa_select').value = opcion.value;
+            actualizarTotalRápido();
+            tabInicial = 'dashboard';
+        }
+    }
+    abrirTab(tabInicial);
+
+    /* ---------- Confirmaciones ---------- */
+    const dialogoConfirmar = document.getElementById('confirmar');
+    document.querySelectorAll('form[data-confirmar]').forEach((form) => {
+        form.addEventListener('submit', (e) => {
+            e.preventDefault();
+            document.getElementById('confirmar-titulo').textContent = form.dataset.titulo;
+            document.getElementById('confirmar-texto').textContent = form.dataset.confirmar;
+            document.getElementById('confirmar-accion').textContent = form.dataset.accion;
+            dialogoConfirmar.returnValue = '';
+            dialogoConfirmar.showModal();
+            dialogoConfirmar.addEventListener('close', () => {
+                if (dialogoConfirmar.returnValue === 'si') form.submit();
+            }, { once: true });
+        });
+    });
+
+    /* ---------- Editor de productos ---------- */
+    const editor = document.getElementById('editor');
+    document.querySelectorAll('[data-editar]').forEach((b) => b.addEventListener('click', () => {
+        document.getElementById('editor-form').action = '/admin/plato/editar/' + b.dataset.editar;
+        document.getElementById('e-nombre').value = b.dataset.nombre;
+        document.getElementById('e-descripcion').value = b.dataset.descripcion;
+        document.getElementById('e-precio').value = b.dataset.precio;
+        document.getElementById('e-categoria').value = b.dataset.categoria;
+        document.getElementById('e-imagen').value = '';
+        editor.showModal();
+    }));
+    document.getElementById('editor-cancelar').addEventListener('click', () => editor.close());
+    document.querySelectorAll('dialog').forEach((d) => d.addEventListener('click', (e) => { if (e.target === d) d.close(); }));
 </script>
 </body>
 </html>
