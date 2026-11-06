@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ruleta de la Suerte - La Selva del Prado</title>
+    {% include '_theme.html' %}
+    <style>
+        dialog { padding: 0; margin: auto; border-radius: 2rem; width: calc(100% - 2rem); max-width: 26rem; background: transparent; color: #f6f3ec; }
+        dialog[open] { animation: aparecer .45s cubic-bezier(.3,1.5,.5,1); }
+        dialog::backdrop { background: rgba(7,21,15,.75); backdrop-filter: blur(6px); }
+        @keyframes aparecer { from { opacity: 0; transform: scale(.85); } }
+        .halo { animation: halo 3s ease-in-out infinite; }
+        @keyframes halo { 50% { box-shadow: 0 0 0 10px rgba(201,138,60,.12), 0 0 60px 10px rgba(201,138,60,.25); } }
+        .ficha { animation: entrada .4s ease-out backwards; }
+    </style>
+</head>
+<body class="selva-bg min-h-screen text-hueso font-sans antialiased overflow-x-hidden">
+<div class="max-w-5xl mx-auto px-4 py-5 sm:py-8">
+
+    <header class="flex flex-wrap items-center gap-x-6 gap-y-3">
+        <a href="{{ url_for('ver_carta') }}" class="inline-flex items-center gap-2 rounded-xl border border-white/20 px-4 py-2.5 font-semibold hover:bg-white/10 transition focus:outline-none focus-visible:ring-2 focus-visible:ring-ambar-300"><i class="fa-solid fa-arrow-left text-sm" aria-hidden="true"></i>Volver a la carta</a>
+        <div class="flex items-center gap-3 ml-auto">
+            {% with logo_class='w-11 h-11 shrink-0' %}{% include '_logo.html' %}{% endwith %}
+            <div>
+                <p class="font-display text-2xl font-semibold leading-none">La Selva del Prado</p>
+                <p class="text-xs text-selva-200 mt-1">RUC 10433857009 · Tingo María</p>
+            </div>
+        </div>
+    </header>
+
+    <div class="grid gap-6 lg:grid-cols-[minmax(0,1.25fr)_minmax(0,1fr)] items-start mt-6">
+        <main class="glass entrada rounded-[2rem] p-5 sm:p-8 text-center shadow-alta">
+            <p class="text-xs font-semibold tracking-[.3em] uppercase text-ambar-300">Mesa {{ "%02d"|format(mesa_numero) }}</p>
+            <h1 class="font-display text-5xl sm:text-6xl leading-none mt-2">Ruleta de la <em class="text-ambar-300">Suerte</em></h1>
+
+            <div class="relative mx-auto mt-5 w-full max-w-[26rem]">
+                <canvas id="ruleta" class="block w-full aspect-square" role="img" aria-label="Ruleta de premios"></canvas>
+                <p id="cargando" class="absolute inset-0 grid place-items-center text-selva-200"><span><i class="fa-solid fa-circle-notch fa-spin mr-2" aria-hidden="true"></i>Cargando premios…</span></p>
+            </div>
+
+            <button type="button" id="btn-girar" disabled class="brillo halo mt-5 w-full max-w-sm rounded-2xl bg-ambar-500 text-selva-950 text-lg font-extrabold py-4 hover:bg-ambar-300 focus:outline-none focus-visible:ring-4 focus-visible:ring-hueso">
+                <i class="fa-solid fa-dharmachakra mr-2" aria-hidden="true"></i><span id="btn-texto">¡Girar!</span>
+            </button>
+            <p class="mt-3 text-sm text-selva-200" aria-live="polite">
+                <span id="contador-giros" class="inline-block min-w-7 rounded-full bg-ambar-500 text-selva-950 font-bold px-2 py-0.5">{{ estado.disponibles }}</span>
+                <span id="texto-giros">{{ 'giro disponible' if estado.disponibles == 1 else 'giros disponibles' }}</span>
+            </p>
+            <p id="error" role="alert" class="mt-3 text-sm font-semibold text-[#ffb4a6] empty:hidden"></p>
+        </main>
+
+        <aside class="space-y-5">
+            <section class="glass rounded-3xl p-6">
+                <h2 class="font-display text-3xl">¿Cómo funciona?</h2>
+                <ol class="mt-3 space-y-3 text-sm text-selva-200">
+                    <li class="flex gap-3"><span class="grid place-items-center w-7 h-7 shrink-0 rounded-full bg-ambar-500/25 text-ambar-300 font-bold">1</span><span>Por cada <strong class="text-hueso">plato de comida</strong> que pides ganas <strong class="text-hueso">1 giro</strong>.</span></li>
+                    <li class="flex gap-3"><span class="grid place-items-center w-7 h-7 shrink-0 rounded-full bg-ambar-500/25 text-ambar-300 font-bold">2</span><span>Gira la ruleta y espera a que se detenga.</span></li>
+                    <li class="flex gap-3"><span class="grid place-items-center w-7 h-7 shrink-0 rounded-full bg-ambar-500/25 text-ambar-300 font-bold">3</span><span>Muestra el <strong class="text-hueso">código</strong> de tu premio al mozo antes de pagar la cuenta.</span></li>
+                </ol>
+                {% if estado.disponibles == 0 %}
+                <p class="mt-4 rounded-2xl bg-white/5 border border-white/10 px-4 py-3 text-sm">
+                    <i class="fa-solid fa-utensils text-ambar-300 mr-1" aria-hidden="true"></i>
+                    Pide un <strong>plato de comida</strong> para ganar un giro.
+                </p>
+                {% endif %}
+            </section>
+
+            <section class="glass rounded-3xl p-6">
+                <h2 class="font-display text-3xl">Tus premios</h2>
+                <ul id="lista-premios" class="mt-3 space-y-2">
+                    {% for t in estado.ganados %}
+                    <li class="flex items-center gap-3 rounded-2xl bg-white/5 border border-white/10 px-4 py-3">
+                        <span class="w-3.5 h-3.5 rounded-full shrink-0" style="background: {{ t.premio_color or '#47806a' }}" aria-hidden="true"></span>
+                        <span class="flex-1 min-w-0"><span class="block font-semibold truncate">{{ t.premio_texto }}</span><span class="text-xs text-selva-200">{{ t.fecha_uso.strftime('%I:%M %p') }}</span></span>
+                        <span class="font-mono font-bold tracking-wider rounded-lg bg-ambar-500/20 text-ambar-300 px-2 py-1">{{ t.codigo }}</span>
+                    </li>
+                    {% endfor %}
+                </ul>
+                <p id="sin-premios" class="mt-3 text-sm text-selva-200 {{ 'hidden' if estado.ganados }}">Aún no has girado la ruleta.</p>
+            </section>
+        </aside>
+    </div>
+</div>
+
+<!-- Resultado del giro -->
+<dialog id="resultado" aria-labelledby="resultado-titulo">
+    <div class="glass selva-bg rounded-[2rem] p-8 text-center shadow-alta border border-ambar-500/40">
+        <span id="resultado-color" class="inline-grid place-items-center w-20 h-20 rounded-full ring-4 ring-ambar-300 text-3xl text-white shadow-oro"><i class="fa-solid fa-gift" aria-hidden="true"></i></span>
+        <p class="mt-5 text-xs font-semibold tracking-[.3em] uppercase text-ambar-300">Tu resultado</p>
+        <h2 id="resultado-titulo" class="font-display text-5xl leading-tight mt-2"></h2>
+        <p class="mt-4 text-sm text-selva-200">Muestra este código al mozo para reclamar tu premio:</p>
+        <p id="resultado-codigo" class="mt-2 inline-block font-mono text-3xl font-bold tracking-[.25em] rounded-2xl bg-white/10 border border-white/20 px-5 py-2"></p>
+        <form method="dialog" class="mt-7">
+            <button class="brillo w-full rounded-2xl bg-ambar-500 text-selva-950 font-bold py-4 hover:bg-ambar-300 focus:outline-none focus-visible:ring-4 focus-visible:ring-hueso">¡Genial!</button>
+        </form>
+    </div>
+</dialog>
+
+<script src="{{ url_for('static', filename='js/ruleta.js') }}"></script>
+<script>
+(function () {
+    const URL_PREMIOS = {{ url_for('ruleta.api_premios')|tojson }};
+    const URL_GIRAR = {{ url_for('ruleta.api_girar')|tojson }};
+    const $ = (id) => document.getElementById(id);
+
+    const ruleta = new Ruleta($('ruleta'), [], { alTic: Ruleta.crearSonidoTic() });
+    let disponibles = {{ estado.disponibles|tojson }};
+    let premios = [];
+
+    function mostrarError(texto) { $('error').textContent = texto || ''; }
+
+    function actualizarBoton() {
+        $('contador-giros').textContent = disponibles;
+        $('texto-giros').textContent = disponibles === 1 ? 'giro disponible' : 'giros disponibles';
+        const puede = disponibles > 0 && premios.length > 0 && !ruleta.girando;
+        $('btn-girar').disabled = !puede;
+        $('btn-girar').classList.toggle('halo', puede);
+        $('btn-texto').textContent = ruleta.girando ? 'Girando…'
+            : !premios.length ? 'Ruleta sin premios'
+            : disponibles > 0 ? '¡Girar!' : 'Sin giros disponibles';
+    }
+
+    function agregarALista(r) {
+        const li = document.createElement('li');
+        li.className = 'ficha flex items-center gap-3 rounded-2xl bg-white/5 border border-ambar-500/50 px-4 py-3';
+        const punto = document.createElement('span');
+        punto.className = 'w-3.5 h-3.5 rounded-full shrink-0';
+        punto.style.background = r.premio.color;
+        const texto = document.createElement('span');
+        texto.className = 'flex-1 min-w-0';
+        const nombre = document.createElement('span');
+        nombre.className = 'block font-semibold truncate';
+        nombre.textContent = r.premio.texto;
+        const hora = document.createElement('span');
+        hora.className = 'text-xs text-selva-200';
+        hora.textContent = r.hora;
+        texto.append(nombre, hora);
+        const codigo = document.createElement('span');
+        codigo.className = 'font-mono font-bold tracking-wider rounded-lg bg-ambar-500/20 text-ambar-300 px-2 py-1';
+        codigo.textContent = r.codigo;
+        li.append(punto, texto, codigo);
+        $('lista-premios').prepend(li);
+        $('sin-premios').classList.add('hidden');
+    }
+
+    function mostrarResultado(r) {
+        $('resultado-titulo').textContent = r.premio.texto;
+        $('resultado-codigo').textContent = r.codigo;
+        $('resultado-color').style.background = r.premio.color;
+        $('resultado').showModal();
+        Ruleta.lanzarConfeti([r.premio.color]);
+    }
+
+    /* 1) Premios configurados por el administrador (JSON) */
+    async function cargarPremios() {
+        try {
+            const resp = await fetch(URL_PREMIOS, { headers: { Accept: 'application/json' } });
+            const datos = await resp.json();
+            if (!resp.ok) throw new Error(datos.error || 'No se pudieron cargar los premios.');
+            premios = datos.premios;
+            disponibles = datos.disponibles;
+            ruleta.setPremios(premios);
+            mostrarError(premios.length ? '' : 'Por ahora la ruleta no tiene premios. Consulta con el personal.');
+        } catch (e) {
+            mostrarError(e.message || 'Sin conexión. Recarga la página.');
+        } finally {
+            if ($('cargando')) $('cargando').remove();
+            actualizarBoton();
+        }
+    }
+
+    /* 2) Girar: el servidor gasta el ticket y sortea; aquí solo se anima */
+    async function girar() {
+        if (ruleta.girando || disponibles <= 0) return;
+        mostrarError('');
+        $('btn-girar').disabled = true;
+        let r;
+        try {
+            const resp = await fetch(URL_GIRAR, { method: 'POST', headers: { 'Content-Type': 'application/json', Accept: 'application/json' }, body: '{}' });
+            r = await resp.json();
+            if (!resp.ok) throw new Error(r.error || 'No se pudo girar.');
+        } catch (e) {
+            mostrarError(e.message || 'Sin conexión. Intenta de nuevo.');
+            await cargarPremios();   // re-sincroniza giros y premios con el servidor
+            return;
+        }
+
+        // Si el admin cambió los premios mientras tanto, se redibujan antes de girar
+        if (!premios[r.indice] || premios[r.indice].id !== r.premio.id) {
+            const resp = await fetch(URL_PREMIOS);
+            premios = (await resp.json()).premios;
+            ruleta.setPremios(premios);
+        }
+
+        disponibles = r.disponibles;
+        const girando = ruleta.girarA(r.indice);
+        actualizarBoton();
+        await girando;
+        agregarALista(r);
+        mostrarResultado(r);
+        actualizarBoton();
+    }
+
+    $('btn-girar').addEventListener('click', girar);
+    $('resultado').addEventListener('click', (e) => { if (e.target === $('resultado')) $('resultado').close(); });
+    cargarPremios();
+})();
+</script>
+</body>
+</html>

@@ -28,16 +28,32 @@
         <h1 class="font-display text-5xl sm:text-6xl leading-none mt-3">¡Pedido <em class="text-ambar-300">en marcha!</em></h1>
         <p class="mt-5 text-selva-200">Tu orden ya está en cocina. En breve te estaremos atendiendo.</p>
 
+        {% if ruleta.disponibles %}
+        <div class="mt-7 rounded-2xl border border-ambar-500/60 bg-ambar-500/10 px-5 py-4">
+            <p class="font-display text-3xl leading-tight"><i class="fa-solid fa-dharmachakra text-ambar-300 mr-1" aria-hidden="true"></i>
+                {% if giros_nuevos %}¡Ganaste {{ giros_nuevos }} {{ 'giro' if giros_nuevos == 1 else 'giros' }}!{% else %}Tienes giros pendientes{% endif %}
+            </p>
+            <p class="text-sm text-selva-200 mt-1">Te {{ 'queda' if ruleta.disponibles == 1 else 'quedan' }} {{ ruleta.disponibles }} {{ 'giro' if ruleta.disponibles == 1 else 'giros' }} en la Ruleta de la Suerte.</p>
+            <a href="{{ url_for('ruleta.vista') }}" class="brillo block mt-4 rounded-2xl bg-esmeralda-700 text-white font-bold py-4 ring-2 ring-ambar-300 hover:bg-esmeralda-500 focus:outline-none focus-visible:ring-4"><i class="fa-solid fa-dharmachakra mr-2" aria-hidden="true"></i>Girar la ruleta</a>
+        </div>
+        {% else %}
+        <p class="mt-5 text-sm text-selva-200"><i class="fa-solid fa-dharmachakra text-ambar-300 mr-1" aria-hidden="true"></i>Cada plato de comida que pidas te da 1 giro en la Ruleta de la Suerte.</p>
+        {% endif %}
+
         <div class="mt-8 grid gap-3">
             <a href="/carta" class="brillo rounded-2xl bg-ambar-500 text-selva-950 font-bold py-4 hover:bg-ambar-300 focus:outline-none focus-visible:ring-4 focus-visible:ring-hueso"><i class="fa-solid fa-utensils mr-2" aria-hidden="true"></i>Pedir algo más</a>
             <a href="/logout" class="rounded-2xl border border-white/25 font-semibold py-4 hover:bg-white/10 transition focus:outline-none focus-visible:ring-4 focus-visible:ring-ambar-300"><i class="fa-solid fa-right-from-bracket mr-2" aria-hidden="true"></i>Cerrar sesión de la mesa</a>
         </div>
 
+        {% if not ruleta.disponibles %}{# con giros pendientes no se redirige: el cliente decide cuándo girar #}
         <div class="mt-7 h-1 rounded-full bg-white/10 overflow-hidden" aria-hidden="true"><div class="cuenta-atras h-full bg-esmeralda-500"></div></div>
         <p class="mt-2 text-xs text-selva-200/80">Volverás a la carta en unos segundos.</p>
+        {% endif %}
     </main>
+    {% if not ruleta.disponibles %}
     <script>
         setTimeout(() => { location.href = '/carta'; }, 10000);
     </script>
+    {% endif %}
 </body>
 </html>

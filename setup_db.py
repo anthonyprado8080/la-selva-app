@@ -1,4 +1,5 @@
 from app import app, db, Mesa, Plato
+from ruleta import PremioRuleta, PREMIOS_INICIALES
 from werkzeug.security import generate_password_hash
 
 with app.app_context():
@@ -22,5 +23,9 @@ with app.app_context():
     ]
     
     db.session.bulk_save_objects(platos_iniciales)
+
+    print("Creando premios de la Ruleta de la Suerte...")
+    for texto, color, peso in PREMIOS_INICIALES:
+        db.session.add(PremioRuleta(texto=texto, color=color, peso=peso))
     db.session.commit()
     print("¡Base de datos lista! Se crearon las mesas y el menú fotográfico.")

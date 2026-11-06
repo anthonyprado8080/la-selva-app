@@ -1,5 +1,4 @@
 from flask import Flask, Response, render_template, request, redirect, url_for, session, flash
-from flask_sqlalchemy import SQLAlchemy
 from werkzeug.security import generate_password_hash, check_password_hash
 from werkzeug.utils import secure_filename
 import base64
@@ -9,7 +8,11 @@ import json
 import mimetypes
 import os
 import uuid
-from datetime import datetime, timedelta
+
+from extensions import db, obtener_hora_peru
+from models import Mesa, Plato, Pedido, DetallePedido
+import ruleta
+from ruleta import sincronizar_giros, desvincular_pedido, estado_ruleta
 
 # ==========================================
 # 1. CONFIGURACIÓN INICIAL
@@ -23,48 +26,14 @@ app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
 app.config['UPLOAD_FOLDER'] = os.path.join(basedir, 'static', 'uploads')
 
-db = SQLAlchemy(app)
-
-def obtener_hora_peru():
-    return datetime.utcnow() - timedelta(hours=5)
+db.init_app(app)
 
 # ==========================================
-# 2. MODELOS DE BASE DE DATOS
+# 2. MÓDULOS
 # ==========================================
-class Mesa(db.Model):
-    id = db.Column(db.Integer, primary_key=True)
-    numero = db.Column(db.Integer, unique=True, nullable=False)
-    password_hash = db.Column(db.String(255), nullable=False)
-    pedidos = db.relationship('Pedido', backref='mesa_asignada', lazy=True)
-
-class Plato(db.Model):
-    id = db.Column(db.Integer, primary_key=True)
-    nombre = db.Column(db.String(100), nullable=False)
-    descripcion = db.Column(db.Text, nullable=True)
-    precio = db.Column(db.Float, nullable=False)
-    categoria = db.Column(db.String(50), nullable=False)
-    imagen = db.Column(db.String(300), default='https://images.unsplash.com/photo-1546069901-ba9599a7e63c?auto=format&fit=crop&w=300&q=80')
-    disponible = db.Column(db.Boolean, default=True)
-
-class Pedido(db.Model):
-    id = db.Column(db.Integer, primary_key=True)
-    mesa_id = db.Column(db.Integer, db.ForeignKey('mesa.id'), nullable=False)
-    estado = db.Column(db.String(50), default='Pendiente')
-    total = db.Column(db.Float, default=0.0)
-    fecha_hora = db.Column(db.DateTime, default=obtener_hora_peru)
-    metodo_pago = db.Column(db.String(50), nullable=True)
-    monto_recibido = db.Column(db.Float, default=0.0)
-    vuelto = db.Column(db.Float, default=0.0)
-    detalles = db.relationship('DetallePedido', backref='pedido', lazy=True)
-
-class DetallePedido(db.Model):
-    id = db.Column(db.Integer, primary_key=True)
-    pedido_id = db.Column(db.Integer, db.ForeignKey('pedido.id'), nullable=False)
-    plato_id = db.Column(db.Integer, db.ForeignKey('plato.id'), nullable=False)
-    cantidad = db.Column(db.Integer, nullable=False)
-    precio_unitario = db.Column(db.Float, nullable=False)
-    hora_pedido = db.Column(db.DateTime, default=obtener_hora_peru)
-    plato = db.relationship('Plato')
+# Los modelos de mesas, carta y pedidos están en models.py.
+# La Ruleta de la Suerte (modelos, lógica y rutas) está en ruleta.py.
+app.register_blueprint(ruleta.bp)
 
 # ==========================================
 # 3. RUTAS PARA COMENSALES
@@ -109,7 +78,8 @@ def ver_carta():
                            golosinas=platos_golosinas,
                            piscina=platos_piscina,
                            mesas=Mesa.query.order_by(Mesa.numero).all(),
-                           pedido_actual=Pedido.query.filter_by(mesa_id=session['mesa_id'], estado='Pendiente').first())
+                           pedido_actual=Pedido.query.filter_by(mesa_id=session['mesa_id'], estado='Pendiente').first(),
+                           ruleta=estado_ruleta(session['mesa_id']))
 
 @app.route('/enviar-pedido', methods=['POST'])
 def enviar_pedido():
@@ -146,7 +116,10 @@ def enviar_pedido():
     for item in platos_pedidos:
         detalle = DetallePedido(pedido_id=pedido_actual.id, plato_id=item['plato_id'], cantidad=item['cantidad'], precio_unitario=item['precio_unitario'])
         db.session.add(detalle)
-    
+    db.session.flush()
+
+    # Ruleta de la Suerte: cada plato de comida del pedido da un ticket (un giro)
+    session['giros_nuevos'] = sincronizar_giros(pedido_actual)
     db.session.commit()
     return redirect(url_for('gracias'))
 
@@ -154,7 +127,9 @@ def enviar_pedido():
 def gracias():
     if 'mesa_id' not in session:
         return redirect(url_for('login_mesa'))
-    return render_template('gracias.html', mesa_numero=session.get('mesa_numero'))
+    return render_template('gracias.html', mesa_numero=session.get('mesa_numero'),
+                           giros_nuevos=session.pop('giros_nuevos', 0),
+                           ruleta=estado_ruleta(session['mesa_id']))
 
 @app.route('/logout')
 def logout():
@@ -253,10 +228,12 @@ def editar_detalle(detalle_id):
         db.session.commit()
         detalles_restantes = DetallePedido.query.filter_by(pedido_id=pedido.id).all()
         if len(detalles_restantes) == 0:
+            desvincular_pedido(pedido)
             db.session.delete(pedido)
         else:
             nuevo_total = sum(d.cantidad * d.precio_unitario for d in detalles_restantes)
             pedido.total = nuevo_total
+            sincronizar_giros(pedido)  # si se quitaron productos, se retiran giros sin usar
             
         db.session.commit()
     return redirect(url_for('admin_dashboard'))
@@ -443,7 +420,8 @@ with app.app_context():
     
     if not os.path.exists(app.config['UPLOAD_FOLDER']):
         os.makedirs(app.config['UPLOAD_FOLDER'])
-        
+
+    ruleta.sembrar_premios_iniciales()  # solo la primera vez: premios de ejemplo editables
     db.create_all()
 
 if __name__ == '__main__':

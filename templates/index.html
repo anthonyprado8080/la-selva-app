@@ -28,6 +28,7 @@
         <a href="#carta" title="Carta" aria-label="Carta" class="w-11 h-11 grid place-items-center rounded-2xl bg-ambar-500/25 text-ambar-300 transition hover:bg-ambar-500/40"><i class="fa-solid fa-table-cells-large" aria-hidden="true"></i></a>
         <a href="#cuenta" title="La cuenta" aria-label="La cuenta" class="w-11 h-11 grid place-items-center rounded-2xl text-selva-200 transition hover:bg-white/10 hover:text-hueso"><i class="fa-solid fa-receipt" aria-hidden="true"></i></a>
         <a href="#mesas" title="Mesas" aria-label="Mesas" class="w-11 h-11 grid place-items-center rounded-2xl text-selva-200 transition hover:bg-white/10 hover:text-hueso"><i class="fa-solid fa-chair" aria-hidden="true"></i></a>
+        <a href="{{ url_for('ruleta.vista') }}" title="Ruleta de la Suerte" aria-label="Ruleta de la Suerte ({{ ruleta.disponibles }} giros)" class="relative w-11 h-11 grid place-items-center rounded-2xl text-selva-200 transition hover:bg-white/10 hover:text-hueso"><i class="fa-solid fa-dharmachakra" aria-hidden="true"></i>{% if ruleta.disponibles %}<span class="absolute -top-1 -right-1 min-w-5 h-5 grid place-items-center rounded-full bg-ambar-500 text-selva-950 text-[11px] font-bold px-1">{{ ruleta.disponibles }}</span>{% endif %}</a>
         <a href="/logout" title="Salir de la mesa" aria-label="Salir de la mesa" class="mt-auto w-11 h-11 grid place-items-center rounded-2xl text-selva-200 transition hover:bg-alerta/70 hover:text-white"><i class="fa-solid fa-right-from-bracket" aria-hidden="true"></i></a>
     </nav>
 
@@ -49,6 +50,11 @@
                     <span class="w-2.5 h-2.5 rounded-full {{ 'bg-ambar-300' if abierta else 'bg-esmeralda-300' }}"></span>
                     Mesa {{ "%02d"|format(mesa_numero) }} ({{ 'Ocupada' if abierta else 'Libre' }})
                 </span>
+                {% if ruleta.disponibles %}
+                <a href="{{ url_for('ruleta.vista') }}" class="brillo inline-flex items-center gap-2 rounded-xl bg-ambar-500 text-selva-950 font-bold px-4 py-2.5 hover:bg-ambar-300 focus:outline-none focus-visible:ring-2 focus-visible:ring-hueso"><i class="fa-solid fa-dharmachakra" aria-hidden="true"></i>¡Girar la ruleta! ({{ ruleta.disponibles }})</a>
+                {% else %}
+                <a href="{{ url_for('ruleta.vista') }}" class="inline-flex items-center gap-2 rounded-xl border border-ambar-500/50 bg-ambar-500/10 px-4 py-2.5 text-sm hover:bg-ambar-500/20 transition" title="Ruleta de la Suerte"><i class="fa-solid fa-dharmachakra text-ambar-300" aria-hidden="true"></i>Cada plato = 1 giro de ruleta</a>
+                {% endif %}
                 <a href="/admin" class="inline-flex items-center gap-2 rounded-xl border border-ambar-300/50 text-ambar-300 font-semibold px-4 py-2.5 hover:bg-ambar-300/10 transition focus:outline-none focus-visible:ring-2 focus-visible:ring-ambar-300"><i class="fa-solid fa-lock text-sm" aria-hidden="true"></i>Administrador</a>
                 <a href="/logout" class="md:hidden inline-flex items-center gap-2 rounded-xl border border-white/20 px-4 py-2.5 font-semibold"><i class="fa-solid fa-right-from-bracket text-sm" aria-hidden="true"></i>Salir</a>
             </div>
